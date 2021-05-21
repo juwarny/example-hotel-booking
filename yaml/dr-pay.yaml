@@ -2,7 +2,7 @@ apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
   name: dr-pay
-  namespace: mybnb
+  namespace: myhotel
 spec:
   host: pay
   trafficPolicy:

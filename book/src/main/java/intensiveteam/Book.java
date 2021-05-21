@@ -14,7 +14,6 @@ public class Book {
     @GeneratedValue(strategy=GenerationType.AUTO)
     private Long id;
 
-    private Long bookId;
     private Long roomId;
     private Integer price;
     private Long hostId;
@@ -29,14 +28,6 @@ public class Book {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public Long getBookId() {
-        return bookId;
-    }
-
-    public void setBookId(Long bookId) {
-        this.bookId = bookId;
     }
 
     public Long getRoomId() {

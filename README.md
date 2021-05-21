@@ -32,7 +32,7 @@
 1. 호스트가 룸을 등록한다.
 1. 호스트가 룸을 삭제한다.
 3. 게스트가 룸을 검색한다.
-4. 게스트가 호텔을 선택하여 사용 예약한다.
+4. 게스트가 룸을 선택하여 사용 예약한다.
 5. 게스트가 결제한다. (Sync, 결제서비스)
 6. 결제가 완료되면, 결제 & 예약 내용을 게스트에게 알림을 전송한다. (Async, 알림서비스)
 7. 예약 내역을 호스트에게 전달한다.
@@ -127,44 +127,38 @@
 
 
 ### 이벤트 도출
-![image](https://user-images.githubusercontent.com/43338817/118909518-1c6e7f00-b95e-11eb-8fec-18ea9be6dfd2.png)
+![image](https://user-images.githubusercontent.com/45786659/118963296-42694300-b9a1-11eb-9e67-05148a338fab.png)
 
 ### 부적격 이벤트 탈락
-![image](https://user-images.githubusercontent.com/43338817/118909666-52136800-b95e-11eb-8ad4-cbd0e67c2468.png)
+![image](https://user-images.githubusercontent.com/45786659/118963312-46956080-b9a1-11eb-9600-f6868b1672f8.png)
 
     - 과정중 도출된 잘못된 도메인 이벤트들을 걸러내는 작업을 수행함
-        - 주문시>메뉴카테고리선택됨, 주문시>메뉴검색됨 :  UI 의 이벤트이지, 업무적인 의미의 이벤트가 아니라서 제외
+        - 룸검색됨, 예약정보조회됨 :  UI 의 이벤트이지, 업무적인 의미의 이벤트가 아니라서 제외
 
 ### 액터, 커맨드 부착하여 읽기 좋게
-![image](https://user-images.githubusercontent.com/43338817/118911650-82103a80-b961-11eb-9d80-6f3ec830e294.png)
+![image](https://user-images.githubusercontent.com/45786659/118963330-4bf2ab00-b9a1-11eb-81b2-f44fc65f1cca.png)
 
 ### 어그리게잇으로 묶기
-![image](https://user-images.githubusercontent.com/43338817/118912269-7e30e800-b962-11eb-9472-81efab29904f.png)
+![image](https://user-images.githubusercontent.com/45786659/118963371-59a83080-b9a1-11eb-9ade-4556d1fb4cc8.png)
 
-    - app의 Order, store 의 주문처리, 결제의 결제이력은 그와 연결된 command 와 event 들에 의하여 트랜잭션이 유지되어야 하는 단위로 그들 끼리 묶어줌
+    - 룸, 예약관리, 결제는 그와 연결된 command 와 event 들에 의하여 트랜잭션이 유지되어야 하는 단위로 그들 끼리 묶어줌
 
 ### 바운디드 컨텍스트로 묶기
 
-![image](https://user-images.githubusercontent.com/43338817/118912830-54c48c00-b963-11eb-80d7-a187936719f1.png)
+![image](https://user-images.githubusercontent.com/45786659/118963396-5f057b00-b9a1-11eb-9289-909a85d38d82.png)
 
     - 도메인 서열 분리 
-        - Core Domain:  app(front), store : 없어서는 안될 핵심 서비스이며, 연견 Up-time SLA 수준을 99.999% 목표, 배포주기는 app 의 경우 1주일 1회 미만, store 의 경우 1개월 1회 미만
-        - Supporting Domain:   marketing, customer : 경쟁력을 내기위한 서비스이며, SLA 수준은 연간 60% 이상 uptime 목표, 배포주기는 각 팀의 자율이나 표준 스프린트 주기가 1주일 이므로 1주일 1회 이상을 기준으로 함.
-        - General Domain:   pay : 결제서비스로 3rd Party 외부 서비스를 사용하는 것이 경쟁력이 높음 (핑크색으로 이후 전환할 예정)
+        - Core Domain:  룸, 예약 : 없어서는 안될 핵심 서비스이며, 연견 Up-time SLA 수준을 99.999% 목표, 배포주기는 1주일 1회 미만
+        - Supporting Domain:   알림, 마이페이지 : 경쟁력을 내기위한 서비스이며, SLA 수준은 연간 60% 이상 uptime 목표, 배포주기는 각 팀의 자율이나 표준 스프린트 주기가 1주일 이므로 1주일 1회 이상을 기준으로 함.
+        - General Domain:   결제 : 결제서비스로 3rd Party 외부 서비스를 사용하는 것이 경쟁력이 높음 (핑크색으로 이후 전환할 예정)
 
 ### 폴리시 부착 (괄호는 수행주체, 폴리시 부착을 둘째단계에서 해놔도 상관 없음. 전체 연계가 초기에 드러남)
 
-![image](https://user-images.githubusercontent.com/43338817/118916348-b8ea4e80-b969-11eb-9586-564d7b9548a4.png)
+![image](https://user-images.githubusercontent.com/45786659/118963431-64fb5c00-b9a1-11eb-9064-e3a5dbebdd34.png)
 
 ### 폴리시의 이동과 컨텍스트 매핑 (점선은 Pub/Sub, 실선은 Req/Resp)
 
-![image](https://user-images.githubusercontent.com/43338817/118916411-d8817700-b969-11eb-916d-7972b20bf1aa.png)
-
-### 완성된 1차 모형
-
-![image](https://user-images.githubusercontent.com/43338817/118918987-a4f51b80-b96e-11eb-90bf-effd2c3d28dd.png)
-
-    - View Model 추가
+![image](https://user-images.githubusercontent.com/45786659/118963450-6a58a680-b9a1-11eb-9ee3-0a37983b6081.png)
     
 ### 호텔 바운디드 컨텍스트 내 PUB/SUB 고려하여 모델 간소화
 
@@ -180,7 +174,7 @@
 ![image](https://user-images.githubusercontent.com/45786659/118925428-b2fc6980-b979-11eb-9c07-97f79c70d1b4.png)
 
     - (ok) 게스트가 룸을 검색한다.
-    - (ok) 게스트가 호텔을 선택하여 사용 예약한다.
+    - (ok) 게스트가 룸을 선택하여 사용 예약한다.
     - (ok) 게스트가 결제한다. (Sync, 결제서비스)
     - (ok) 결제가 완료되면, 결제 & 예약 내용을 게스트에게 알림을 전송한다. (Async, 알림서비스)
     - (ok) 예약 내역을 호스트에게 전달한다.
@@ -194,22 +188,14 @@
 
 
 
-### 모델 수정
-
-![image](https://user-images.githubusercontent.com/487999/79684176-4e4c7800-826a-11ea-8deb-b7b053e5d7c6.png)
-    
-    - 수정된 모델은 모든 요구사항을 커버함.
-
 ### 비기능 요구사항에 대한 검증
 
-![image](https://user-images.githubusercontent.com/487999/79684184-5c9a9400-826a-11ea-8d87-2ed1e44f4562.png)
+![image](https://user-images.githubusercontent.com/45786659/118966467-bd802880-b9a4-11eb-8e92-abbc04826774.png)
 
     - 마이크로 서비스를 넘나드는 시나리오에 대한 트랜잭션 처리
-        - 고객 주문시 결제처리:  결제가 완료되지 않은 주문은 절대 받지 않는다는 경영자의 오랜 신념(?) 에 따라, ACID 트랜잭션 적용. 주문와료시 결제처리에 대해서는 Request-Response 방식 처리
-        - 결제 완료시 점주연결 및 배송처리:  App(front) 에서 Store 마이크로서비스로 주문요청이 전달되는 과정에 있어서 Store 마이크로 서비스가 별도의 배포주기를 가지기 때문에 Eventual Consistency 방식으로 트랜잭션 처리함.
-        - 나머지 모든 inter-microservice 트랜잭션: 주문상태, 배달상태 등 모든 이벤트에 대해 카톡을 처리하는 등, 데이터 일관성의 시점이 크리티컬하지 않은 모든 경우가 대부분이라 판단, Eventual Consistency 를 기본으로 채택함.
-
-
+        - 룸 예약시 결제처리: 결제가 완료되지 않은 예약은 절대 받지 않는다에 따라, ACID 트랜잭션 적용. 예약 완료시 결제처리에 대해서는 Request-Response 방식 처리
+        - 예약 완료시 알림 처리: 예약에서 알림 마이크로서비스로 예약 완료 내용이 전달되는 과정에 있어서 알림 마이크로서비스가 별도의 배포주기를 가지기 때문에 Eventual Consistency 방식으로 트랜잭션 처리함.
+        - 나머지 모든 inter-microservice 트랜잭션: 예약상태, 예약취소 등 모든 이벤트에 대해 알림 처리하는 등, 데이터 일관성의 시점이 크리티컬하지 않은 모든 경우가 대부분이라 판단, Eventual Consistency 를 기본으로 채택함.
 
 
 ## 헥사고날 아키텍처 다이어그램 도출
@@ -224,42 +210,108 @@
 
 # 구현:
 
-분석/설계 단계에서 도출된 헥사고날 아키텍처에 따라, 각 BC별로 대변되는 마이크로 서비스들을 스프링부트와 파이선으로 구현하였다. 구현한 각 서비스를 로컬에서 실행하는 방법은 아래와 같다 (각자의 포트넘버는 8081 ~ 808n 이다)
+분석/설계 단계에서 도출된 헥사고날 아키텍처에 따라, 각 BC별로 대변되는 마이크로 서비스들을 스프링부트로 구현하였다. 배포는 아래와 같이 수행한다.
 
 ```
-cd app
-mvn spring-boot:run
+# eks cluster 생성
+eksctl create cluster --name example-hotel-booking --version 1.16 --nodegroup-name standard-workers --node-type t3.medium --nodes 3 --nodes-min 1 --nodes-max 4
 
-cd pay
-mvn spring-boot:run 
+# eks cluster 설정
+aws eks --region ap-northeast-1 update-kubeconfig --name example-hotel-booking
+kubectl config current-context
 
-cd store
-mvn spring-boot:run  
+# metric server 설치
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.3.6/components.yaml
 
-cd customer
-python policy-handler.py 
+# Helm 설치
+curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 > get_helm.sh
+chmod 700 get_helm.sh
+./get_helm.sh
+(Helm 에게 권한을 부여하고 초기화)
+kubectl --namespace kube-system create sa tiller
+kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
+helm init --service-account tiller
+
+# Kafka 설치
+helm repo update
+helm repo add bitnami https://charts.bitnami.com/bitnami
+kubectl create ns kafka
+helm install my-kafka bitnami/kafka --namespace kafka
+
+# istio 설치
+kubectl apply -f install/kubernetes/istio-demo.yaml
+
+# kiali service type 변경
+kubectl edit service/kiali -n istio-system
+(ClusterIP -> LoadBalancer)
+
+# myhotel namespace 생성
+kubectl create namespace myhotel
+
+# myhotel istio injection 설정
+kubectl label namespace myhotel istio-injection=enabled
+
+# myhotel image build & push
+cd myhotel/book
+mvn package
+docker build -t 740569282574.dkr.ecr.ap-northeast-1.amazonaws.com/book:latest .
+docker push 740569282574.dkr.ecr.ap-northeast-1.amazonaws.com/book:latest
+
+# myhotel deploy
+cd myhotel/yaml
+kubectl apply -f configmap.yaml
+kubectl apply -f gateway.yaml
+kubectl apply -f room.yaml
+kubectl apply -f book.yaml
+kubectl apply -f pay.yaml
+kubectl apply -f mypage.yaml
+kubectl apply -f alarm.yaml
+kubectl apply -f siege.yaml
+
+# myhotel gateway service type 변경
+$ kubectl edit service/gateway -n myhotel
+(ClusterIP -> LoadBalancer)
 ```
+
+현황
+
+![image](https://user-images.githubusercontent.com/45786659/118969619-3b91fe80-b9a8-11eb-9594-eb9fb4efde49.png)
+
+![image](https://user-images.githubusercontent.com/45786659/118969712-595f6380-b9a8-11eb-947a-ca627e5e15e6.png)
+
+![image](https://user-images.githubusercontent.com/45786659/118971988-04711c80-b9ab-11eb-800b-be935df5235d.png)
+
+
 
 ## DDD 의 적용
 
-- 각 서비스내에 도출된 핵심 Aggregate Root 객체를 Entity 로 선언하였다: (예시는 pay 마이크로 서비스). 이때 가능한 현업에서 사용하는 언어 (유비쿼터스 랭귀지)를 그대로 사용하려고 노력했다. 하지만, 일부 구현에 있어서 영문이 아닌 경우는 실행이 불가능한 경우가 있기 때문에 계속 사용할 방법은 아닌것 같다. (Maven pom.xml, Kafka의 topic id, FeignClient 의 서비스 id 등은 한글로 식별자를 사용하는 경우 오류가 발생하는 것을 확인하였다)
+- 각 서비스내에 도출된 핵심 Aggregate Root 객체를 Entity 로 선언하였다: (예시는 book 마이크로 서비스). 이때 가능한 현업에서 사용하는 언어 (유비쿼터스 랭귀지)를 그대로 사용하려고 노력했다. 
 
 ```
-package fooddelivery;
+package intensiveteam;
 
 import javax.persistence.*;
 import org.springframework.beans.BeanUtils;
 import java.util.List;
+import java.util.Date;
+import intensiveteam.external.*;
 
 @Entity
-@Table(name="결제이력_table")
-public class 결제이력 {
+@Table(name="Book_table")
+public class Book {
 
     @Id
     @GeneratedValue(strategy=GenerationType.AUTO)
     private Long id;
-    private String orderId;
-    private Double 금액;
+
+    private Long bookId;
+    private Long roomId;
+    private Integer price;
+    private Long hostId;
+    private Long guestId;
+    private Date startDate;
+    private Date endDate;
+    private String status;
 
     public Long getId() {
         return id;
@@ -268,152 +320,165 @@ public class 결제이력 {
     public void setId(Long id) {
         this.id = id;
     }
-    public String getOrderId() {
-        return orderId;
+
+    public Long getBookId() {
+        return bookId;
     }
 
-    public void setOrderId(String orderId) {
-        this.orderId = orderId;
-    }
-    public Double get금액() {
-        return 금액;
+    public void setBookId(Long bookId) {
+        this.bookId = bookId;
     }
 
-    public void set금액(Double 금액) {
-        this.금액 = 금액;
+    public Long getRoomId() {
+        return roomId;
     }
+
+    public void setRoomId(Long roomId) {
+        this.roomId = roomId;
+    }
+
+    public Integer getPrice() {
+        return price;
+    }
+
+    public void setPrice(Integer price) {
+        this.price = price;
+    }
+
+    public Long getHostId() {
+        return hostId;
+    }
+
+    public void setHostId(Long hostId) {
+        this.hostId = hostId;
+    }
+
+    public Long getGuestId() {
+        return guestId;
+    }
+
+    public void setGuestId(Long guestId) {
+        this.guestId = guestId;
+    }
+
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
+
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
 
 }
 
 ```
 - Entity Pattern 과 Repository Pattern 을 적용하여 JPA 를 통하여 다양한 데이터소스 유형 (RDB or NoSQL) 에 대한 별도의 처리가 없도록 데이터 접근 어댑터를 자동 생성하기 위하여 Spring Data REST 의 RestRepository 를 적용하였다
 ```
-package fooddelivery;
+package intensiveteam;
 
 import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
-public interface 결제이력Repository extends PagingAndSortingRepository<결제이력, Long>{
+@RepositoryRestResource(collectionResourceRel="books", path="books")
+public interface BookRepository extends PagingAndSortingRepository<Book, Long>{
+
+
 }
 ```
 - 적용 후 REST API 의 테스트
 ```
-# app 서비스의 주문처리
-http localhost:8081/orders item="통닭"
+# 룸 등록처리
+http POST http://room:8080/rooms price=1500
 
-# store 서비스의 배달처리
-http localhost:8083/주문처리s orderId=1
+# 예약처리
+http POST http://book:8080/books roomId=1 price=1000 startDate=20210505 endDate=20210508
 
-# 주문 상태 확인
-http localhost:8081/orders/1
-
-```
-
-
-## 폴리글랏 퍼시스턴스
-
-앱프런트 (app) 는 서비스 특성상 많은 사용자의 유입과 상품 정보의 다양한 콘텐츠를 저장해야 하는 특징으로 인해 RDB 보다는 Document DB / NoSQL 계열의 데이터베이스인 Mongo DB 를 사용하기로 하였다. 이를 위해 order 의 선언에는 @Entity 가 아닌 @Document 로 마킹되었으며, 별다른 작업없이 기존의 Entity Pattern 과 Repository Pattern 적용과 데이터베이스 제품의 설정 (application.yml) 만으로 MongoDB 에 부착시켰다
-
-```
-# Order.java
-
-package fooddelivery;
-
-@Document
-public class Order {
-
-    private String id; // mongo db 적용시엔 id 는 고정값으로 key가 자동 발급되는 필드기 때문에 @Id 나 @GeneratedValue 를 주지 않아도 된다.
-    private String item;
-    private Integer 수량;
-
-}
-
-
-# 주문Repository.java
-package fooddelivery;
-
-public interface 주문Repository extends JpaRepository<Order, UUID>{
-}
-
-# application.yml
-
-  data:
-    mongodb:
-      host: mongodb.default.svc.cluster.local
-    database: mongo-example
+# 예약 상태 확인
+http http://book:8080/books/1
 
 ```
 
-## 폴리글랏 프로그래밍
 
-고객관리 서비스(customer)의 시나리오인 주문상태, 배달상태 변경에 따라 고객에게 카톡메시지 보내는 기능의 구현 파트는 해당 팀이 python 을 이용하여 구현하기로 하였다. 해당 파이썬 구현체는 각 이벤트를 수신하여 처리하는 Kafka consumer 로 구현되었고 코드는 다음과 같다:
-```
-from flask import Flask
-from redis import Redis, RedisError
-from kafka import KafkaConsumer
-import os
-import socket
+## (포기?)폴리글랏 퍼시스턴스
+
+각 마이크로서비스의 특성에 따라 데이터 저장소를 RDB, DocumentDB/NoSQL 등 다양하게 사용할 수 있지만, 시간적/환경적 특성상 모두 H2 메모리DB를 적용하였다.
 
 
-# To consume latest messages and auto-commit offsets
-consumer = KafkaConsumer('fooddelivery',
-                         group_id='',
-                         bootstrap_servers=['localhost:9092'])
-for message in consumer:
-    print ("%s:%d:%d: key=%s value=%s" % (message.topic, message.partition,
-                                          message.offset, message.key,
-                                          message.value))
+## (포기?)폴리글랏 프로그래밍
 
-    # 카톡호출 API
-```
-
-파이선 애플리케이션을 컴파일하고 실행하기 위한 도커파일은 아래와 같다 (운영단계에서 할일인가? 아니다 여기 까지가 개발자가 할일이다. Immutable Image):
-```
-FROM python:2.7-slim
-WORKDIR /app
-ADD . /app
-RUN pip install --trusted-host pypi.python.org -r requirements.txt
-ENV NAME World
-EXPOSE 8090
-CMD ["python", "policy-handler.py"]
-```
+각 마이크로서비스의 특성에 따라 다양한 프로그래밍 언어를 사용하여 구현할 수 있지만, 시간적/환경적 특성상 Java를 이용하여 구현하였다.
 
 
 ## 동기식 호출 과 Fallback 처리
 
-분석단계에서의 조건 중 하나로 주문(app)->결제(pay) 간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다. 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다. 
+분석단계에서의 조건 중 하나로 예약(book)->결제(pay) 간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다. 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다. 
 
-- 결제서비스를 호출하기 위하여 Stub과 (FeignClient) 를 이용하여 Service 대행 인터페이스 (Proxy) 를 구현 
+- 결제 서비스를 호출하기 위하여 Stub과 (FeignClient) 를 이용하여 Service 대행 인터페이스 (Proxy) 를 구현 
 
 ```
-# (app) 결제이력Service.java
+# (book) PaymentService.java 
 
-package fooddelivery.external;
+@FeignClient(name="pay", url="http://pay:8080")
+public interface PaymentService {
 
-@FeignClient(name="pay", url="http://localhost:8082")//, fallback = 결제이력ServiceFallback.class)
-public interface 결제이력Service {
-
-    @RequestMapping(method= RequestMethod.POST, path="/결제이력s")
-    public void 결제(@RequestBody 결제이력 pay);
+    @RequestMapping(method= RequestMethod.GET, path="/payments")
+    public void pay(@RequestBody Payment payment);
 
 }
 ```
 
-- 주문을 받은 직후(@PostPersist) 결제를 요청하도록 처리
+- 예약을 받은 직후(@PostPersist) 결제를 요청하도록 처리
 ```
-# Order.java (Entity)
+@Entity
+@Table(name="Book_table")
+public class Book {
+    
+    ...
 
     @PostPersist
     public void onPostPersist(){
+        {
 
-        fooddelivery.external.결제이력 pay = new fooddelivery.external.결제이력();
-        pay.setOrderId(getOrderId());
-        
-        Application.applicationContext.getBean(fooddelivery.external.결제이력Service.class)
-                .결제(pay);
-    }
+            intensiveteam.external.Payment payment = new intensiveteam.external.Payment();
+            payment.setBookId(getId());
+            payment.setRoomId(getRoomId());
+            payment.setGuestId(getGuestId());
+            payment.setPrice(getPrice());
+            payment.setHostId(getHostId());
+            payment.setStartDate(getStartDate());
+            payment.setEndDate(getEndDate());
+            payment.setStatus("PayApproved");
+
+            // mappings goes here
+            try {
+                 BookApplication.applicationContext.getBean(intensiveteam.external.PaymentService.class)
+                    .pay(payment);
+            }catch(Exception e) {
+                throw new RuntimeException("결제서비스 호출 실패입니다.");
+            }
+        }
+
+}
 ```
 
-- 동기식 호출에서는 호출 시간에 따른 타임 커플링이 발생하며, 결제 시스템이 장애가 나면 주문도 못받는다는 것을 확인:
+- (to-do)동기식 호출에서는 호출 시간에 따른 타임 커플링이 발생하며, 결제 시스템이 장애가 나면 주문도 못받는다는 것을 확인:
 
 
 ```
@@ -440,70 +505,103 @@ http localhost:8081/orders item=피자 storeId=2   #Success
 ## 비동기식 호출 / 시간적 디커플링 / 장애격리 / 최종 (Eventual) 일관성 테스트
 
 
-결제가 이루어진 후에 상점시스템으로 이를 알려주는 행위는 동기식이 아니라 비 동기식으로 처리하여 상점 시스템의 처리를 위하여 결제주문이 블로킹 되지 않아도록 처리한다.
+결제가 이루어진 후에 알림 처리는 동기식이 아니라 비 동기식으로 처리하여 알림 시스템의 처리를 위하여 예약 블로킹 되지 않아도록 처리한다.
  
-- 이를 위하여 결제이력에 기록을 남긴 후에 곧바로 결제승인이 되었다는 도메인 이벤트를 카프카로 송출한다(Publish)
+- 이를 위하여 예약관리, 결제이력에 기록을 남긴 후에 곧바로 결제승인이 되었다는 도메인 이벤트를 카프카로 송출한다(Publish)
  
 ```
-package fooddelivery;
-
 @Entity
-@Table(name="결제이력_table")
-public class 결제이력 {
+@Table(name="Payment_table")
+public class Payment {
 
- ...
-    @PrePersist
-    public void onPrePersist(){
-        결제승인됨 결제승인됨 = new 결제승인됨();
-        BeanUtils.copyProperties(this, 결제승인됨);
-        결제승인됨.publish();
+    ...
+
+    @PostPersist
+    public void onPostPersist(){
+        PaymentApproved paymentApproved = new PaymentApproved();
+        BeanUtils.copyProperties(this, paymentApproved);
+        paymentApproved.publishAfterCommit();
+
+
     }
 
 }
 ```
-- 상점 서비스에서는 결제승인 이벤트에 대해서 이를 수신하여 자신의 정책을 처리하도록 PolicyHandler 를 구현한다:
+- 알림 서비스에서는 예약완료, 결제승인 이벤트에 대해서 이를 수신하여 자신의 정책을 처리하도록 PolicyHandler를 구현한다:
 
 ```
-package fooddelivery;
-
-...
-
 @Service
 public class PolicyHandler{
 
     @StreamListener(KafkaProcessor.INPUT)
-    public void whenever결제승인됨_주문정보받음(@Payload 결제승인됨 결제승인됨){
+    public void wheneverPaymentApproved_Notify(@Payload PaymentApproved paymentApproved){
 
-        if(결제승인됨.isMe()){
-            System.out.println("##### listener 주문정보받음 : " + 결제승인됨.toJson());
-            // 주문 정보를 받았으니, 요리를 슬슬 시작해야지..
+        if(!paymentApproved.validate()) return;
+
+        System.out.println("\n\n##### listener Notify : " + paymentApproved.toJson() + "\n\n");
+
+        // Sample Logic //
+        Notification notification = new Notification();
+        notificationRepository.save(notification);
             
-        }
+    }
+    @StreamListener(KafkaProcessor.INPUT)
+    public void wheneverPaymentCanceled_Notify(@Payload PaymentCanceled paymentCanceled){
+
+        if(!paymentCanceled.validate()) return;
+
+        System.out.println("\n\n##### listener Notify : " + paymentCanceled.toJson() + "\n\n");
+
+        // Sample Logic //
+        Notification notification = new Notification();
+        notificationRepository.save(notification);
+            
+    }
+    @StreamListener(KafkaProcessor.INPUT)
+    public void wheneverBookCanceled_Notify(@Payload BookCanceled bookCanceled){
+
+        if(!bookCanceled.validate()) return;
+
+        System.out.println("\n\n##### listener Notify : " + bookCanceled.toJson() + "\n\n");
+
+        // Sample Logic //
+        Notification notification = new Notification();
+        notificationRepository.save(notification);
+            
+    }
+    @StreamListener(KafkaProcessor.INPUT)
+    public void wheneverBooked_Notify(@Payload Booked booked){
+
+        if(!booked.validate()) return;
+
+        System.out.println("\n\n##### listener Notify : " + booked.toJson() + "\n\n");
+
+        // Sample Logic //
+        Notification notification = new Notification();
+        notificationRepository.save(notification);
+            
     }
 
-}
-
 ```
-실제 구현을 하자면, 카톡 등으로 점주는 노티를 받고, 요리를 마친후, 주문 상태를 UI에 입력할테니, 우선 주문정보를 DB에 받아놓은 후, 이후 처리는 해당 Aggregate 내에서 하면 되겠다.:
+(to-do)실제 구현을 하자면, 카카오톡 등으로 예약, 결제에 대한 알림을 처리한다:
   
 ```
-  @Autowired 주문관리Repository 주문관리Repository;
-  
-  @StreamListener(KafkaProcessor.INPUT)
-  public void whenever결제승인됨_주문정보받음(@Payload 결제승인됨 결제승인됨){
+@Service
+public class PolicyHandler{
+    @Autowired NotificationRepository notificationRepository;
 
-      if(결제승인됨.isMe()){
-          카톡전송(" 주문이 왔어요! : " + 결제승인됨.toString(), 주문.getStoreId());
-
-          주문관리 주문 = new 주문관리();
-          주문.setId(결제승인됨.getOrderId());
-          주문관리Repository.save(주문);
-      }
-  }
+    @StreamListener(KafkaProcessor.INPUT)
+    public void wheneverPaymentApproved_Notify(@Payload PaymentApproved paymentApproved){
+        if(paymentApproved.isMe()) {
+            //System.out.println("\n\n##### listener Notify : " + paymentApproved.toJson() + "\n\n");
+            addNotificationHistory("(guest)" + paymentApproved.getGuest(), "PayApproved");
+            addNotificationHistory("(host)" + paymentApproved.getHost(), "PayApproved");
+        }            
+    }
 
 ```
 
-상점 시스템은 주문/결제와 완전히 분리되어있으며, 이벤트 수신에 따라 처리되기 때문에, 상점시스템이 유지보수로 인해 잠시 내려간 상태라도 주문을 받는데 문제가 없다:
+(to-do)상점 시스템은 주문/결제와 완전히 분리되어있으며, 이벤트 수신에 따라 처리되기 때문에, 상점시스템이 유지보수로 인해 잠시 내려간 상태라도 주문을 받는데 문제가 없다:
 ```
 # 상점 서비스 (store) 를 잠시 내려놓음 (ctrl+c)
 
@@ -525,13 +623,13 @@ http localhost:8080/orders     # 모든 주문의 상태가 "배송됨"으로 �
 
 # 운영
 
-## CI/CD 설정
+## (to-do)CI/CD 설정
 
 
 각 구현체들은 각자의 source repository 에 구성되었고, 사용한 CI/CD 플랫폼은 GCP를 사용하였으며, pipeline build script 는 각 프로젝트 폴더 이하에 cloudbuild.yml 에 포함되었다.
 
 
-## 동기식 호출 / 서킷 브레이킹 / 장애격리
+## (to-do)동기식 호출 / 서킷 브레이킹 / 장애격리
 
 * 서킷 브레이킹 프레임워크의 선택: Spring FeignClient + Hystrix 옵션을 사용하여 구현함
 
@@ -709,7 +807,7 @@ Shortest transaction:	        0.00
 - Retry 의 설정 (istio)
 - Availability 가 높아진 것을 확인 (siege)
 
-### 오토스케일 아웃
+### (to-do)오토스케일 아웃
 앞서 CB 는 시스템을 안정되게 운영할 수 있게 해줬지만 사용자의 요청을 100% 받아들여주지 못했기 때문에 이에 대한 보완책으로 자동화된 확장 기능을 적용하고자 한다. 
 
 
@@ -746,7 +844,7 @@ Concurrency:		       96.02
 ```
 
 
-## 무정지 재배포
+## (to-do)무정지 재배포
 
 * 먼저 무정지 재배포가 100% 되는 것인지 확인하기 위해서 Autoscaler 이나 CB 설정을 제거함
 
@@ -806,6 +904,78 @@ Concurrency:		       96.02
 ```
 
 배포기간 동안 Availability 가 변화없기 때문에 무정지 재배포가 성공한 것으로 확인됨.
+
+## (to-do)ConfigMap 사용
+
+시스템별로 또는 운영중에 동적으로 변경 가능성이 있는 설정들을 ConfigMap을 사용하여 관리합니다.
+
+* configmap.yaml
+```
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mybnb-config
+  namespace: mybnb
+data:
+  api.url.payment: http://pay:8080
+  alarm.prefix: Hello
+```
+* booking.yaml (configmap 사용)
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: booking
+  namespace: mybnb
+  labels:
+    app: booking
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: booking
+  template:
+    metadata:
+      labels:
+        app: booking
+    spec:
+      containers:
+        - name: booking
+          image: 496278789073.dkr.ecr.ap-northeast-2.amazonaws.com/mybnb-booking:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: api.url.payment
+              valueFrom:
+                configMapKeyRef:
+                  name: mybnb-config
+                  key: api.url.payment
+          resources:
+```
+* kubectl describe pod/booking-588cb89c6b-gmw8h -n mybnb
+```
+Containers:
+  booking:
+    Container ID:   docker://0b90fe0d06629fc367fa83273abecba2724958a0b838c058553d193a86c3e0fe
+    Image:          496278789073.dkr.ecr.ap-northeast-2.amazonaws.com/mybnb-booking:latest
+    Image ID:       docker-pullable://496278789073.dkr.ecr.ap-northeast-2.amazonaws.com/mybnb-booking@sha256:59abe6ec02e165fda1c8e3dbf3e8bcedf7fb5edc53fcffca5f708a70969452f3
+    Port:           8080/TCP
+    Host Port:      0/TCP
+    State:          Running
+      Started:      Mon, 03 Aug 2020 16:48:56 +0900
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:  500m
+    Requests:
+      cpu:      200m
+    Liveness:   http-get http://:8080/actuator/health delay=120s timeout=2s period=5s #success=1 #failure=5
+    Readiness:  http-get http://:8080/actuator/health delay=10s timeout=2s period=5s #success=1 #failure=10
+    Environment:
+      api.url.payment:  <set to the key 'api.url.payment' of config map 'mybnb-config'>  Optional: false
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-mrczz (ro)
+```
 
 
 # 신규 개발 조직의 추가

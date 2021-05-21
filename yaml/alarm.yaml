@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: alarm
-  namespace: mybnb
+  namespace: myhotel
   labels:
     app: alarm
 spec:
@@ -25,7 +25,7 @@ spec:
             - name: alarm.prefix
               valueFrom:
                 configMapKeyRef:
-                  name: mybnb-config
+                  name: myhotel-config
                   key: alarm.prefix
           readinessProbe:
             httpGet:
@@ -50,7 +50,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: alarm
-  namespace: mybnb
+  namespace: myhotel
   labels:
     app: alarm
 spec:

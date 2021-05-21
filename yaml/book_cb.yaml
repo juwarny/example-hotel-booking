@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: booking
-  namespace: mybnb
+  name: book
+  namespace: myhotel
   labels:
-    app: booking
+    app: book
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: booking
+      app: book
   template:
     metadata:
       labels:
-        app: booking
+        app: book
     spec:
       containers:
-        - name: booking
-          image: 740569282574.dkr.ecr.ap-northeast-1.amazonaws.com/book:latest
+        - name: book
+          image: 740569282574.dkr.ecr.ap-northeast-1.amazonaws.com/book:cb1
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -25,7 +25,7 @@ spec:
             - name: api.url.payment
               valueFrom:
                 configMapKeyRef:
-                  name: mybnb-config
+                  name: myhotel-config
                   key: api.url.payment
           readinessProbe:
             httpGet:
@@ -49,13 +49,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: booking
-  namespace: mybnb
+  name: book
+  namespace: myhotel
   labels:
-    app: booking
+    app: book
 spec:
   ports:
     - port: 8080
       targetPort: 8080
   selector:
-    app: booking
+    app: book
