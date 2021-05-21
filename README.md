@@ -778,7 +778,7 @@ kubectl apply -f room.yaml
 
 - 새버전으로의 배포 시작
 
-- deployment.yml 에 readiessProbe 설정
+- room.yml 에 readiessProbe 설정
 
 ```
 (room.yml)
@@ -791,9 +791,11 @@ kubectl apply -f room.yaml
             periodSeconds: 5
             failureThreshold: 10
 ```
-- deployment.yml 적용
+- room.yml 적용
+
 ```
-kubectl apply -f kubernetes/deployment.yaml
+kubectl apply -f room.yaml
+
 ```
 - 동일한 시나리오로 재배포 한 후 Availability 확인:
 
