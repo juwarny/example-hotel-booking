@@ -1,4 +1,6 @@
 package intensiveteam;
+import javax.persistence.*;
+import org.apache.commons.beanutils.BeanUtils;
 
 public class Booked extends AbstractEvent {
 
@@ -20,5 +22,17 @@ public class Booked extends AbstractEvent {
 
     public void setStatus(String status){
         this.status = status;
+    }
+
+    @PreRemove
+    public void onPreRemove(){
+        BookCanceled bookCanceled = new BookCanceled();
+        try{
+            BeanUtils.copyProperties(this, bookCanceled);
+            bookCanceled.publishAfterCommit();
+        }catch (Exception ex){
+
+        }
+
     }
 }

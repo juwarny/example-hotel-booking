@@ -105,6 +105,16 @@ public class Payment {
     }
 
 
+    @PreRemove
+    public void onPreRemove(){
+        PaymentCanceled paymentCanceled = new PaymentCanceled();
+        try {
+            BeanUtils.copyProperties(this, paymentCanceled);
+            paymentCanceled.publishAfterCommit();
+        } catch (Exception ex){
 
+        }
+
+    }
 
 }

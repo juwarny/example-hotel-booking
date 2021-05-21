@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
+import java.util.List;
 
 @Service
 public class PolicyHandler{
@@ -19,9 +20,16 @@ public class PolicyHandler{
 
         System.out.println("\n\n##### listener Canceled : " + bookCanceled.toJson() + "\n\n");
 
+        if(bookCanceled.isMe()){
+            List<Payment> payList = paymentRepository.findByBookId(bookCanceled.getId());
+            if ((payList != null) && !payList.isEmpty()){
+                paymentRepository.deleteAll(payList);
+            }
+        }
+
         // Sample Logic //
-        Payment payment = new Payment();
-        paymentRepository.save(payment);
+//        Payment payment = new Payment();
+//        paymentRepository.save(payment);
             
     }
 
