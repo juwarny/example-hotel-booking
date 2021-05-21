@@ -623,6 +623,23 @@ http http://alarm:8080/notifications # 알림이력조회
 ```
 ![image](https://user-images.githubusercontent.com/45786659/119076408-7722dc00-ba2d-11eb-9a01-766f4dd6f9ca.png)
 
+## Correlation 테스트
+
+서비스를 이용해 만들어진 각 이벤트 건은 Correlation-key 연결을 통해 식별이 가능하다.
+
+- Correlation-key로 식별하여 예약(book) 이벤트를 통해 생성된 결제(pay) 건에 대해 예약 취소 시 동일한 Correlation-key를 가지는 결제(pay) 이벤트 건 역시 삭제되는 모습을 확인한다:
+
+결제(pay) 이벤트 건 확인을 위하여 GET 수행
+
+<img width="1440" alt="스크린샷 2021-05-21 오후 4 56 23" src="https://user-images.githubusercontent.com/43338817/119104024-c2051980-ba56-11eb-9dc5-b49c410ad5f3.png">
+
+위 결제(pay) 이벤트 건과 동일한 식별 키를 갖는 7번 예약(book) 이벤트 건 DELETE 수행
+
+<img width="1440" alt="스크린샷 2021-05-21 오후 4 56 58" src="https://user-images.githubusercontent.com/43338817/119103981-b6195780-ba56-11eb-8eae-81bb47dc1b09.png">
+
+결제(pay) 이벤트 건을 GET 명령어를 통해 조회한 결과 예약(book)에서 삭제한 7번 키를 갖는 결제(pay) 이벤트 또한 삭제된 것을 확
+
+<img width="1440" alt="스크린샷 2021-05-21 오후 4 57 10" src="https://user-images.githubusercontent.com/43338817/119104058-c92c2780-ba56-11eb-83bc-9cc1baff8157.png">
 
 # 운영
 
