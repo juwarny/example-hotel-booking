@@ -905,7 +905,7 @@ Concurrency:		       96.02
 
 배포기간 동안 Availability 가 변화없기 때문에 무정지 재배포가 성공한 것으로 확인됨.
 
-## (to-do)ConfigMap 사용
+## ConfigMap 사용
 
 시스템별로 또는 운영중에 동적으로 변경 가능성이 있는 설정들을 ConfigMap을 사용하여 관리합니다.
 
@@ -914,8 +914,8 @@ Concurrency:		       96.02
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: mybnb-config
-  namespace: mybnb
+  name: myhotel-config
+  namespace: myhotel
 data:
   api.url.payment: http://pay:8080
   alarm.prefix: Hello
@@ -925,34 +925,35 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: booking
-  namespace: mybnb
+  name: book
+  namespace: myhotel
   labels:
-    app: booking
+    app: book
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: booking
+      app: book
   template:
     metadata:
       labels:
-        app: booking
+        app: book
     spec:
       containers:
-        - name: booking
-          image: 496278789073.dkr.ecr.ap-northeast-2.amazonaws.com/mybnb-booking:latest
+        - name: book
+          image: 740569282574.dkr.ecr.ap-northeast-1.amazonaws.com/book:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
             - name: api.url.payment
               valueFrom:
                 configMapKeyRef:
-                  name: mybnb-config
+                  name: myhotel-config
                   key: api.url.payment
-          resources:
+          ...
 ```
-* kubectl describe pod/booking-588cb89c6b-gmw8h -n mybnb
+* (to-do)kubectl describe pod/book-77998c895-98nwb -n myhotel
 ```
 Containers:
   booking:
