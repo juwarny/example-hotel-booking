@@ -750,26 +750,36 @@ Shortest transaction:           0.01
 
 - 먼저 무정지 재배포가 100% 되는 것인지 확인하기 위해서 Autoscaler 이나 CB 설정을 제거함
 - seige 로 배포작업 직전에 워크로드를 모니터링 함.
+
+
+
+==> Readiness 없을 경우 배포 시
+
 ```
-$ siege -v -c255 -t180S -r10 --content-type "application/json" 'http://book:8080/books POST {"bookId":1, "roomId":1, "price":1000, "hostId":10, "guestId":10, "startDate":20200101, "endDate":20200103}'
+$ siege -c1 -t60S -v http://room:8080/rooms --delay=1S
+
 ```
+
+![image](https://user-images.githubusercontent.com/81946702/119099119-887ddf80-ba51-11eb-879c-e30d4819f17a.png)
+
 ```
-==> (to-do)모니터링 결과 캡처 추가
+kubectl apply -f room.yaml
 ```
+
+- seige 의 화면으로 넘어가서 Availability 가 100% 미만으로 떨어졌는지 확인
+
+![image](https://user-images.githubusercontent.com/81946702/119099287-b8c57e00-ba51-11eb-8a5a-991f7d3e6037.png)
+
+
+==> Readiness 추가 후 배포
 
 - 새버전으로의 배포 시작
-```
-docker build -t 740569282574.dkr.ecr.ap-northeast-1.amazonaws.com/book:v1 .
-kubectl set image ~
-```
-- seige 의 화면으로 넘어가서 Availability 가 100% 미만으로 떨어졌는지 확인
-```
-==> (to-do)로그캡처 추가
-```
+
+
+
 - deployment.yml 에 readiessProbe 설정
 ```
-(book/kubernetes/deployment.yml)
-
+(room.yml)
           readinessProbe:
             httpGet:
               path: '/actuator/health'
@@ -784,10 +794,11 @@ kubectl set image ~
 kubectl apply -f kubernetes/deployment.yaml
 ```
 - 동일한 시나리오로 재배포 한 후 Availability 확인:
-```
-==> (to-do)로그캡처 추가
-```
+
+![image](https://user-images.githubusercontent.com/81946702/119099653-16f26100-ba52-11eb-82da-f04219eabd38.png)
+
 Availability 100%인 것 확인
+
 
 
 ## ConfigMap 사용
