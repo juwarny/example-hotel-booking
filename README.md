@@ -748,6 +748,47 @@ Shortest transaction:           0.01
 
 ## 무정지 재배포
 
+- 먼저 무정지 재배포가 100% 되는 것인지 확인하기 위해서 Autoscaler 이나 CB 설정을 제거함
+- seige 로 배포작업 직전에 워크로드를 모니터링 함.
+```
+$ siege -v -c255 -t180S -r10 --content-type "application/json" 'http://book:8080/books POST {"bookId":1, "roomId":1, "price":1000, "hostId":10, "guestId":10, "startDate":20200101, "endDate":20200103}'
+```
+```
+==> (to-do)모니터링 결과 캡처 추가
+```
+
+- 새버전으로의 배포 시작
+```
+docker build -t 740569282574.dkr.ecr.ap-northeast-1.amazonaws.com/book:v1 .
+kubectl set image ~
+```
+- seige 의 화면으로 넘어가서 Availability 가 100% 미만으로 떨어졌는지 확인
+```
+==> (to-do)로그캡처 추가
+```
+- deployment.yml 에 readiessProbe 설정
+```
+(book/kubernetes/deployment.yml)
+
+          readinessProbe:
+            httpGet:
+              path: '/actuator/health'
+              port: 8080
+            initialDelaySeconds: 10
+            timeoutSeconds: 2
+            periodSeconds: 5
+            failureThreshold: 10
+```
+- deployment.yml 적용
+```
+kubectl apply -f kubernetes/deployment.yaml
+```
+- 동일한 시나리오로 재배포 한 후 Availability 확인:
+```
+==> (to-do)로그캡처 추가
+```
+Availability 100%인 것 확인
+
 
 ## ConfigMap 사용
 
