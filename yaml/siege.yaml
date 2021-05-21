@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: siege
-  namespace: mybnb
+  namespace: myhotel
 spec:
   containers:
     - name: siege
