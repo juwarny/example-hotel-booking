@@ -760,11 +760,14 @@ $ siege -c1 -t60S -v http://room:8080/rooms --delay=1S
 
 ```
 
-![image](https://user-images.githubusercontent.com/81946702/119099119-887ddf80-ba51-11eb-879c-e30d4819f17a.png)
-
 ```
 kubectl apply -f room.yaml
+
 ```
+
+![image](https://user-images.githubusercontent.com/81946702/119099119-887ddf80-ba51-11eb-879c-e30d4819f17a.png)
+
+
 
 - seige 의 화면으로 넘어가서 Availability 가 100% 미만으로 떨어졌는지 확인
 
@@ -775,9 +778,8 @@ kubectl apply -f room.yaml
 
 - 새버전으로의 배포 시작
 
-
-
 - deployment.yml 에 readiessProbe 설정
+
 ```
 (room.yml)
           readinessProbe:
