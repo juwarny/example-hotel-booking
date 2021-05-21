@@ -1,9 +1,9 @@
 intensiveteam/Booked.class
 intensiveteam/GuestManagementPage.class
-intensiveteam/MypageApplication.class
 intensiveteam/config/kafka/KafkaProcessor.class
-intensiveteam/BookCanceled.class
+intensiveteam/MypageApplication.class
 intensiveteam/PolicyHandler.class
+intensiveteam/BookCanceled.class
 intensiveteam/AbstractEvent$1.class
 intensiveteam/GuestManagementPageRepository.class
 intensiveteam/GuestManagementPageViewHandler.class
