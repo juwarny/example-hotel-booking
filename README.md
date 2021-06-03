@@ -170,12 +170,12 @@
 ![image](https://github.com/juwarny/example-hotel-booking/blob/master/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202021-06-04%20%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB%207.29.59.png)
 ### 기능적/비기능적 요구사항을 커버하는지 검증
 
-![image](https://user-images.githubusercontent.com/45786659/118925407-abd55b80-b979-11eb-8fd8-aa1a350a5a85.png)
+![image](https://github.com/juwarny/example-hotel-booking/blob/master/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202021-06-04%20%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB%207.29.59.png)
 
     - (ok) 호스트가 룸을 등록한다.
     - (ok) 호스트가 룸을 삭제한다.
-
-![image](https://user-images.githubusercontent.com/45786659/118925428-b2fc6980-b979-11eb-9c07-97f79c70d1b4.png)
+    - (ok) 호스트가 롬을 삭제 시 예약 취소
+    - (ok) 각 이벤트가 알림으로 전달 (Async, 알림 서비스)
 
     - (ok) 게스트가 룸을 검색한다.
     - (ok) 게스트가 룸을 선택하여 사용 예약한다.
@@ -183,18 +183,14 @@
     - (ok) 결제가 완료되면, 결제 & 예약 내용을 게스트에게 알림을 전송한다. (Async, 알림서비스)
     - (ok) 예약 내역을 호스트에게 전달한다.
     
-![image](https://user-images.githubusercontent.com/45786659/118925449-bbed3b00-b979-11eb-9127-cd5ebe06825a.png)
-
     - (ok) 게스트는 본인의 예약 내용 및 상태를 조회한다.
     - (ok) 게스트는 본인의 예약을 취소할 수 있다.
     - (ok) 예약이 취소되면, 결제를 취소한다. (Async, 결제서비스)
     - (ok) 결제가 취소되면, 결제 취소 내용을 게스트에게 알림을 전송한다. (Async, 알림서비스)
 
-
-
 ### 비기능 요구사항에 대한 검증
 
-![image](https://user-images.githubusercontent.com/45786659/118966467-bd802880-b9a4-11eb-8e92-abbc04826774.png)
+![image](https://github.com/juwarny/example-hotel-booking/blob/master/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202021-06-04%20%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB%207.29.59.png)
 
     - 마이크로 서비스를 넘나드는 시나리오에 대한 트랜잭션 처리
         - 룸 예약시 결제처리: 결제가 완료되지 않은 예약은 절대 받지 않는다에 따라, ACID 트랜잭션 적용. 예약 완료시 결제처리에 대해서는 Request-Response 방식 처리
@@ -218,10 +214,10 @@
 
 ```
 # eks cluster 생성
-eksctl create cluster --name example-hotel-booking --version 1.16 --nodegroup-name standard-workers --node-type t3.medium --nodes 3 --nodes-min 1 --nodes-max 4
+eksctl create cluster --name user04-eks --version 1.17 --nodegroup-name standard-workers --node-type t3.medium --nodes 4 --nodes-min 1 --nodes-max 4
 
 # eks cluster 설정
-aws eks --region ap-northeast-1 update-kubeconfig --name example-hotel-booking
+aws eks --region ap-northeast-2 update-kubeconfig --name user04-eks
 kubectl config current-context
 
 # metric server 설치
@@ -256,21 +252,50 @@ cd myhotel/yaml
 kubectl apply -f configmap.yaml
 kubectl apply -f gateway.yaml
 kubectl apply -f room.yaml
-kubectl apply -f book.yaml
+kubectl apply -f booking.yaml
 kubectl apply -f pay.yaml
 kubectl apply -f mypage.yaml
-kubectl apply -f alarm.yaml
+kubectl apply -f notification.yaml
 kubectl apply -f siege.yaml
 ```
 
 현황
+```
+#kubectl egt all -n myhotel
 
-![image](https://user-images.githubusercontent.com/45786659/118969619-3b91fe80-b9a8-11eb-9594-eb9fb4efde49.png)
+NAME                                READY   STATUS    RESTARTS   AGE
+pod/booking-7dc6fbb847-psm2v        2/2     Running   0          10h
+pod/gateway-cfc98454b-zkkz6         2/2     Running   0          14h
+pod/mypage-9c855fddf-pxcgv          2/2     Running   0          10h
+pod/notification-64fdcd86f5-pbhhk   2/2     Running   0          10h
+pod/pay-b7b4c648b-p58cv             2/2     Running   0          10h
+pod/room-7ffb788f5f-4xwmk           2/2     Running   0          10h
+pod/siege                           2/2     Running   0          14h
 
-![image](https://user-images.githubusercontent.com/45786659/118969712-595f6380-b9a8-11eb-947a-ca627e5e15e6.png)
+NAME                   TYPE           CLUSTER-IP       EXTERNAL-IP                                                                   PORT(S)          AGE
+service/booking        ClusterIP      10.100.170.242   <none>                                                                        8080/TCP         10h
+service/gateway        LoadBalancer   10.100.250.208   a60ac02ae722f4bbf8b8a84c1ce84d8f-105579122.ap-northeast-2.elb.amazonaws.com   8080:31711/TCP   14h
+service/mypage         ClusterIP      10.100.224.136   <none>                                                                        8080/TCP         10h
+service/notification   ClusterIP      10.100.140.134   <none>                                                                        8080/TCP         10h
+service/pay            ClusterIP      10.100.109.210   <none>                                                                        8080/TCP         10h
+service/room           ClusterIP      10.100.108.119   <none>                                                                        8080/TCP         10h
 
-![image](https://user-images.githubusercontent.com/45786659/118971988-04711c80-b9ab-11eb-800b-be935df5235d.png)
+NAME                           READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/booking        1/1     1            1           10h
+deployment.apps/gateway        1/1     1            1           14h
+deployment.apps/mypage         1/1     1            1           10h
+deployment.apps/notification   1/1     1            1           10h
+deployment.apps/pay            1/1     1            1           10h
+deployment.apps/room           1/1     1            1           10h
 
+NAME                                      DESIRED   CURRENT   READY   AGE
+replicaset.apps/booking-7dc6fbb847        1         1         1       10h
+replicaset.apps/gateway-cfc98454b         1         1         1       14h
+replicaset.apps/mypage-9c855fddf          1         1         1       10h
+replicaset.apps/notification-64fdcd86f5   1         1         1       10h
+replicaset.apps/pay-b7b4c648b             1         1         1       10h
+replicaset.apps/room-7ffb788f5f           1         1         1       10h
+```
 
 
 ## DDD 의 적용
@@ -278,127 +303,68 @@ kubectl apply -f siege.yaml
 - 각 서비스내에 도출된 핵심 Aggregate Root 객체를 Entity 로 선언하였다: (예시는 book 마이크로 서비스). 이때 가능한 현업에서 사용하는 언어 (유비쿼터스 랭귀지)를 그대로 사용하려고 노력했다. 
 
 ```
-package intensiveteam;
+package myhotel;
 
 import javax.persistence.*;
-import org.springframework.beans.BeanUtils;
-import java.util.List;
-import java.util.Date;
-import intensiveteam.external.*;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import myhotel.external.PayStatus;
+import myhotel.external.Payment;
+import myhotel.external.PaymentService;
+import org.springframework.beans.BeanUtils;
+import java.util.Date;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
-@Table(name="Book_table")
-public class Book {
+@Table(name="Booking_table")
+public class Booking {
 
     @Id
     @GeneratedValue(strategy=GenerationType.AUTO)
     private Long id;
-
-    private Long bookId;
-    private Long roomId;
-    private Integer price;
-    private Long hostId;
-    private Long guestId;
     private Date startDate;
     private Date endDate;
-    private String status;
+    private Long guestId;
+    private Long hostId;
+    private Long roomId;
+    private BookStatus status;
+    private Integer price;
 
-    public Long getId() {
-        return id;
-    }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getBookId() {
-        return bookId;
-    }
-
-    public void setBookId(Long bookId) {
-        this.bookId = bookId;
-    }
-
-    public Long getRoomId() {
-        return roomId;
-    }
-
-    public void setRoomId(Long roomId) {
-        this.roomId = roomId;
-    }
-
-    public Integer getPrice() {
-        return price;
-    }
-
-    public void setPrice(Integer price) {
-        this.price = price;
-    }
-
-    public Long getHostId() {
-        return hostId;
-    }
-
-    public void setHostId(Long hostId) {
-        this.hostId = hostId;
-    }
-
-    public Long getGuestId() {
-        return guestId;
-    }
-
-    public void setGuestId(Long guestId) {
-        this.guestId = guestId;
-    }
-
-    public Date getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(Date startDate) {
-        this.startDate = startDate;
-    }
-
-    public Date getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(Date endDate) {
-        this.endDate = endDate;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
+    ...
 
 }
+
 
 ```
 - Entity Pattern 과 Repository Pattern 을 적용하여 JPA 를 통하여 다양한 데이터소스 유형 (RDB or NoSQL) 에 대한 별도의 처리가 없도록 데이터 접근 어댑터를 자동 생성하기 위하여 Spring Data REST 의 RestRepository 를 적용하였다
 ```
-package intensiveteam;
+package myhotel;
 
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
-@RepositoryRestResource(collectionResourceRel="books", path="books")
-public interface BookRepository extends PagingAndSortingRepository<Book, Long>{
+import java.util.List;
 
+@RepositoryRestResource(collectionResourceRel="bookings", path="bookings")
+public interface BookingRepository extends PagingAndSortingRepository<Booking, Long>{
+    List<Booking> findByRoomId(Long id);
 
 }
 ```
 - 적용 후 REST API 의 테스트
 ```
 # 룸 등록처리
-http POST http://room:8080/rooms price=1500
+http POST http://room:8080/rooms price=1500 hostId=1
 
 # 예약처리
-http POST http://book:8080/books roomId=1 price=1000 startDate=20210505 endDate=20210508
+http POST http://book:8080/books startDate="2012-04-23T18:25:43.511+0000" endDate="2012-04-27T18:25:43.511+0000" guestId=1 hostId=1 roomId=2 price=1000
 
 # 예약 상태 확인
 http http://book:8080/books/1
@@ -440,30 +406,35 @@ public class Book {
     
     ...
 
-    @PostPersist
+     @PostPersist
     public void onPostPersist(){
-        {
 
-            intensiveteam.external.Payment payment = new intensiveteam.external.Payment();
-            payment.setBookId(getId());
-            payment.setRoomId(getRoomId());
-            payment.setGuestId(getGuestId());
-            payment.setPrice(getPrice());
-            payment.setHostId(getHostId());
-            payment.setStartDate(getStartDate());
-            payment.setEndDate(getEndDate());
-            payment.setStatus("PayApproved");
+        Payment payment = Payment.builder()
+                .bookId(getId())
+                .roomId(getRoomId())
+                .guestId(getGuestId())
+                .price(getPrice())
+                .hostId(getHostId())
+                .startDate(getStartDate())
+                .endDate(getEndDate())
+                .status(PayStatus.APPROVED)
+                .build();
 
-            // mappings goes here
-            try {
-                 BookApplication.applicationContext.getBean(intensiveteam.external.PaymentService.class)
+        // mappings goes here
+        try {
+            BookingApplication
+                    .applicationContext
+                    .getBean(PaymentService.class)
                     .pay(payment);
-            }catch(Exception e) {
-                throw new RuntimeException("결제서비스 호출 실패입니다.");
-            }
+        }catch(Exception e) {
+            throw new RuntimeException("결제서비스 호출 실패입니다.");
         }
 
-}
+        // 결제까지 완료되면 최종적으로 예약 완료 이벤트 발생
+        Booked booked = new Booked();
+        BeanUtils.copyProperties(this, booked);
+        booked.publishAfterCommit();
+    }
 ```
 
 - 동기식 호출로 연결되어 있는 예약(book)->결제(pay) 간의 연결 상황을 Kiali Graph로 확인한 결과 (siege 이용하여 book POST)
