@@ -439,7 +439,7 @@ public class Book {
 
 - 동기식 호출로 연결되어 있는 예약(book)->결제(pay) 간의 연결 상황을 Kiali Graph로 확인한 결과 (siege 이용하여 book POST)
 
-![image](https://user-images.githubusercontent.com/43338817/119081473-fec11880-ba36-11eb-83fe-ef94952faef1.png)
+![image](https://github.com/juwarny/example-hotel-booking/blob/master/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202021-06-04%20%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB%208.18.31.png)
 
 - 동기식 호출에서는 호출 시간에 따른 타임 커플링이 발생하며, 결제 시스템이 장애가 나면 주문도 못받는다는 것을 확인:
 
@@ -449,13 +449,53 @@ public class Book {
 cd yaml
 $ kubectl delete -f pay.yaml
 ```
-![image](https://user-images.githubusercontent.com/45786659/119074505-252c8700-ba2a-11eb-89cd-8151b2b757e4.png)
+
+```
+(base) juwonkim@JUWONui-MacBookAir yaml % kubectl get all -n myhotel
+NAME                                READY   STATUS    RESTARTS   AGE
+pod/booking-7dc6fbb847-psm2v        2/2     Running   0          11h
+pod/gateway-cfc98454b-zkkz6         2/2     Running   0          15h
+pod/mypage-9c855fddf-pxcgv          2/2     Running   0          11h
+pod/notification-64fdcd86f5-pbhhk   2/2     Running   0          11h
+pod/room-7ffb788f5f-4xwmk           2/2     Running   0          11h
+pod/siege                           2/2     Running   0          15h
+
+NAME                   TYPE           CLUSTER-IP       EXTERNAL-IP                                                                   PORT(S)          AGE
+service/booking        ClusterIP      10.100.170.242   <none>                                                                        8080/TCP         11h
+service/gateway        LoadBalancer   10.100.250.208   a60ac02ae722f4bbf8b8a84c1ce84d8f-105579122.ap-northeast-2.elb.amazonaws.com   8080:31711/TCP   15h
+service/mypage         ClusterIP      10.100.224.136   <none>                                                                        8080/TCP         11h
+service/notification   ClusterIP      10.100.140.134   <none>                                                                        8080/TCP         11h
+service/room           ClusterIP      10.100.108.119   <none>                                                                        8080/TCP         11h
+
+NAME                           READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/booking        1/1     1            1           11h
+deployment.apps/gateway        1/1     1            1           15h
+deployment.apps/mypage         1/1     1            1           11h
+deployment.apps/notification   1/1     1            1           11h
+deployment.apps/room           1/1     1            1           11h
+
+NAME                                      DESIRED   CURRENT   READY   AGE
+replicaset.apps/booking-7dc6fbb847        1         1         1       11h
+replicaset.apps/gateway-cfc98454b         1         1         1       15h
+replicaset.apps/mypage-9c855fddf          1         1         1       11h
+replicaset.apps/notification-64fdcd86f5   1         1         1       11h
+replicaset.apps/room-7ffb788f5f           1         1         1       11h
+```
+
 ```
 # 예약처리 (siege 사용)
-http POST http://book:8080/books roomId=2 price=1500 startDate=20210505 endDate=20210508  #Fail
-http POST http://book:8080/books roomId=3 price=2000 startDate=20210505 endDate=20210508  #Fail
+http POST http://book:8080/books startDate="2012-04-23T18:25:43.511+0000" endDate="2012-04-27T18:25:43.511+0000" guestId=1 hostId=1 roomId=2 price=1000  #Fail
 ```
-![image](https://user-images.githubusercontent.com/45786659/119074532-2f4e8580-ba2a-11eb-81dd-1b0b4c058b18.png)
+
+```
+{
+    "timestamp": "2021-06-03T23:26:03.234+0000",
+    "status": 500,
+    "error": "Internal Server Error",
+    "message": "Could not commit JPA transaction; nested exception is javax.persistence.RollbackException: Error while committing the transaction",
+    "path": "/bookings"
+}
+```
 
 ```
 # 결제서비스 재기동
@@ -464,11 +504,28 @@ $ kubectl apply -f pay.yaml
 ![image](https://user-images.githubusercontent.com/45786659/119074868-c4ea1500-ba2a-11eb-8ae4-7b4c04945b43.png)
 ```
 # 예약처리 (siege 사용)
-http POST http://book:8080/books roomId=2 price=1500 startDate=20210505 endDate=20210508  #Success
-http POST http://book:8080/books roomId=3 price=2000 startDate=20210505 endDate=20210508  #Success
+http POST http://book:8080/books startDate="2012-04-23T18:25:43.511+0000" endDate="2012-04-27T18:25:43.511+0000" guestId=1 hostId=1 roomId=2 price=1000  #Success
 ```
-![image](https://user-images.githubusercontent.com/45786659/119074931-e4813d80-ba2a-11eb-9a42-623e8513ddb1.png)
 
+```
+{
+    "startDate": "2012-04-23T18:25:43.511+0000",
+    "endDate": "2012-04-27T18:25:43.511+0000",
+    "guestId": 1,
+    "hostId": 1,
+    "roomId": 2,
+    "status": "BOOKED",
+    "price": 1000,
+    "_links": {
+        "self": {
+            "href": "http://booking:8080/bookings/4"
+        },
+        "booking": {
+            "href": "http://booking:8080/bookings/4"
+        }
+    }
+}
+```
 
 
 - 또한 과도한 요청시에 서비스 장애가 도미노 처럼 벌어질 수 있다. (서킷브레이커, 폴백 처리는 운영단계에서 설명한다.)
@@ -504,114 +561,382 @@ public class Payment {
 - 알림 서비스에서는 예약완료, 결제승인 이벤트에 대해서 이를 수신하여 자신의 정책을 처리하도록 PolicyHandler를 구현한다:
 
 ```
+@Log
 @Service
 public class PolicyHandler{
+    @Autowired NotificationRepository notificationRepository;
 
     @StreamListener(KafkaProcessor.INPUT)
     public void wheneverPaymentApproved_Notify(@Payload PaymentApproved paymentApproved){
 
         if(!paymentApproved.validate()) return;
-
-        System.out.println("\n\n##### listener Notify : " + paymentApproved.toJson() + "\n\n");
-
-        // Sample Logic //
-        Notification notification = new Notification();
-        notificationRepository.save(notification);
+        saveMessageAndNotification(paymentApproved.getGuestId(), paymentApproved.toJson());
             
     }
     @StreamListener(KafkaProcessor.INPUT)
     public void wheneverPaymentCanceled_Notify(@Payload PaymentCanceled paymentCanceled){
 
         if(!paymentCanceled.validate()) return;
-
-        System.out.println("\n\n##### listener Notify : " + paymentCanceled.toJson() + "\n\n");
-
-        // Sample Logic //
-        Notification notification = new Notification();
-        notificationRepository.save(notification);
-            
+        saveMessageAndNotification(paymentCanceled.getGuestId(), paymentCanceled.toJson());
     }
     @StreamListener(KafkaProcessor.INPUT)
     public void wheneverBookCanceled_Notify(@Payload BookCanceled bookCanceled){
 
         if(!bookCanceled.validate()) return;
-
-        System.out.println("\n\n##### listener Notify : " + bookCanceled.toJson() + "\n\n");
-
-        // Sample Logic //
-        Notification notification = new Notification();
-        notificationRepository.save(notification);
+        saveMessageAndNotification(bookCanceled.getGuestId(), bookCanceled.toJson());
             
     }
     @StreamListener(KafkaProcessor.INPUT)
     public void wheneverBooked_Notify(@Payload Booked booked){
 
         if(!booked.validate()) return;
+        saveMessageAndNotification(booked.getGuestId(), booked.toJson());
+            
+    }
+    @StreamListener(KafkaProcessor.INPUT)
+    public void wheneverRegisteredRoom_Notify(@Payload RegisteredRoom registeredRoom){
 
-        System.out.println("\n\n##### listener Notify : " + booked.toJson() + "\n\n");
+        if(!registeredRoom.validate()) return;
+        saveMessageAndNotification(registeredRoom.getHostId(), registeredRoom.toJson());
+            
+    }
+    @StreamListener(KafkaProcessor.INPUT)
+    public void wheneverDeletedRoom_Notify(@Payload DeletedRoom deletedRoom){
 
-        // Sample Logic //
-        Notification notification = new Notification();
-        notificationRepository.save(notification);
+        if(!deletedRoom.validate()) return;
+        saveMessageAndNotification(deletedRoom.getHostId(), deletedRoom.toJson());
             
     }
 
+    public void saveMessageAndNotification(Long userid, String message){
+        Notification notification = new Notification();
+        notification.setUserid(userid);
+        notification.setMessage(
+                "\n\n##### Notify : " + message + "\n\n"
+        );
+
+        log.info(notification.getMessage());
+        notificationRepository.save(notification);
+    }
+
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whatever(@Payload String eventString){}
+
+
+}
 ```
 
 알림 시스템은 예약/결제와 완전히 분리되어있으며, 이벤트 수신에 따라 처리되기 때문에, 알림 시스템이 유지보수로 인해 잠시 내려간 상태라도 예약을 받는데 문제가 없다:
 ```
 # 알림 서비스를 잠시 내려놓음
 cd yaml
-kubectl delete -f alarm.yaml
+kubectl delete -f notification.yaml
 ```
 
-![image](https://user-images.githubusercontent.com/45786659/119075963-aedd5400-ba2c-11eb-950b-342bdb58be3d.png)
+```
+(base) juwonkim@JUWONui-MacBookAir yaml % kubectl get all -n myhotel         
+NAME                           READY   STATUS    RESTARTS   AGE
+pod/booking-7dc6fbb847-psm2v   2/2     Running   0          11h
+pod/gateway-cfc98454b-zkkz6    2/2     Running   0          15h
+pod/mypage-9c855fddf-pxcgv     2/2     Running   0          11h
+pod/pay-b7b4c648b-8djqf        2/2     Running   0          8m19s
+pod/room-7ffb788f5f-4xwmk      2/2     Running   0          11h
+pod/siege                      2/2     Running   0          15h
+```
 
 ```
 # 예약처리 (siege 사용)
-http POST http://book:8080/books roomId=2 price=1500 startDate=20210505 endDate=20210508	#Success
-http POST http://book:8080/books roomId=3 price=2000 startDate=20210505 endDate=20210508	#Success
+http POST http://book:8080/books startDate="2012-04-23T18:25:43.511+0000" endDate="2012-04-27T18:25:43.511+0000" guestId=1 hostId=1 roomId=3 price=1500  #Success
 ```
 
-![image](https://user-images.githubusercontent.com/45786659/119076006-c74d6e80-ba2c-11eb-9d70-3a08a5bb3ec0.png)
+```
+{
+    "startDate": "2012-04-23T18:25:43.511+0000",
+    "endDate": "2012-04-27T18:25:43.511+0000",
+    "guestId": 1,
+    "hostId": 1,
+    "roomId": 3,
+    "status": "BOOKED",
+    "price": 1500,
+    "_links": {
+        "self": {
+            "href": "http://booking:8080/bookings/5"
+        },
+        "booking": {
+            "href": "http://booking:8080/bookings/5"
+        }
+    }
+}
+```
 
 ```
 # 알림이력 확인 (siege 사용)
 http http://alarm:8080/notifications # 알림이력조회 불가
 ```
 
-![image](https://user-images.githubusercontent.com/45786659/119076052-daf8d500-ba2c-11eb-81d3-e8a1ddebe287.png)
+```
+{
+    "timestamp": "2021-06-03T23:38:37.806+0000",
+    "path": "/notifications",
+    "status": 500,
+    "error": "Internal Server Error",
+    "message": "notification: Name does not resolve"
+}
+```
 
 ```
 # 알림 서비스 기동
 kubectl apply -f alarm.yaml
 ```
 
-![image](https://user-images.githubusercontent.com/45786659/119076341-5b1f3a80-ba2d-11eb-8a1f-5554c46233cf.png)
+```
+(base) juwonkim@JUWONui-MacBookAir yaml % kubectl get all -n myhotel        
+NAME                                READY   STATUS    RESTARTS   AGE
+pod/booking-7dc6fbb847-psm2v        2/2     Running   0          11h
+pod/gateway-cfc98454b-zkkz6         2/2     Running   0          15h
+pod/mypage-9c855fddf-pxcgv          2/2     Running   0          11h
+pod/notification-64fdcd86f5-qtsgn   2/2     Running   0          49s
+pod/pay-b7b4c648b-8djqf             2/2     Running   0          11m
+pod/room-7ffb788f5f-4xwmk           2/2     Running   0          11h
+pod/siege                           2/2     Running   0          15h
+```
 
 ```
 # 알림이력 확인 (siege 사용)
 http http://alarm:8080/notifications # 알림이력조회
 ```
-![image](https://user-images.githubusercontent.com/45786659/119076408-7722dc00-ba2d-11eb-9a01-766f4dd6f9ca.png)
+
+```
+{
+    "_embedded": {
+        "notifications": [
+            {
+                "id": null,
+                "message": "\n\n##### Notify : {\"eventType\":\"PaymentApproved\",\"timestamp\":\"20210603233748\",\"id\":2,\"bookId\":5,\"roomId\":3,\"price\":1500,\"hostId\":1,\"guestId\":1,\"startDate\":1335205543511,\"endDate\":1335551143511,\"status\":\"APPROVED\"}\n\n",
+                "_links": {
+                    "self": {
+                        "href": "http://notification:8080/notifications/1"
+                    },
+                    "notification": {
+                        "href": "http://notification:8080/notifications/1"
+                    }
+                }
+            }
+        ]
+    },
+    "_links": {
+        "self": {
+            "href": "http://notification:8080/notifications{?page,size,sort}",
+            "templated": true
+        },
+        "profile": {
+            "href": "http://notification:8080/profile/notifications"
+        }
+    },
+    "page": {
+        "size": 20,
+        "totalElements": 1,
+        "totalPages": 1,
+        "number": 0
+    }
+}
+```
 
 ## Correlation 테스트
 
 서비스를 이용해 만들어진 각 이벤트 건은 Correlation-key 연결을 통해 식별이 가능하다.
 
-- Correlation-key로 식별하여 예약(book) 이벤트를 통해 생성된 결제(pay) 건에 대해 예약 취소 시 동일한 Correlation-key를 가지는 결제(pay) 이벤트 건 역시 삭제되는 모습을 확인한다:
+- Correlation-key로 식별하여 예약(book) 이벤트를 통해 생성된 결제(pay) 건 및 참조된 룸(room) 번호에 대해 룸 삭제 시 예약이 취소가 되고 동일한 Correlation-key를 가지는 결제(pay) 이벤트 건 역시 삭제되는 모습을 확인한다:
+
+룸 생성을 위하여 POST 수행(3번 룸 생성)
+```
+{
+    "price": 1000,
+    "hostId": 1,
+    "_links": {
+        "self": {
+            "href": "http://room:8080/rooms/3"
+        },
+        "room": {
+            "href": "http://room:8080/rooms/3"
+        }
+    }
+}
+```
+룸 3번을 예약하기 위해 GET 수행
+
+```
+{
+    "startDate": "2012-04-23T18:25:43.511+0000",
+    "endDate": "2012-04-27T18:25:43.511+0000",
+    "guestId": 1,
+    "hostId": 1,
+    "roomId": 3,
+    "status": "BOOKED",
+    "price": 1500,
+    "_links": {
+        "self": {
+            "href": "http://booking:8080/bookings/6"
+        },
+        "booking": {
+            "href": "http://booking:8080/bookings/6"
+        }
+    }
+}
+```
 
 결제(pay) 이벤트 건 확인을 위하여 GET 수행
 
-<img width="1440" alt="스크린샷 2021-05-21 오후 4 56 23" src="https://user-images.githubusercontent.com/43338817/119104024-c2051980-ba56-11eb-9dc5-b49c410ad5f3.png">
+```
+{
+                "bookId": 6,
+                "roomId": 3,
+                "price": 1500,
+                "hostId": 1,
+                "guestId": 1,
+                "startDate": "2012-04-23T18:25:43.511+0000",
+                "endDate": "2012-04-27T18:25:43.511+0000",
+                "status": "APPROVED",
+                "_links": {
+                    "self": {
+                        "href": "http://pay:8080/payments/3"
+                    },
+                    "payment": {
+                        "href": "http://pay:8080/payments/3"
+                    }
+                }
+            }
+```
 
-위 결제(pay) 이벤트 건과 동일한 식별 키를 갖는 7번 예약(book) 이벤트 건 DELETE 수행
+위 결제(pay) 이벤트 건과 동일한 식별 키를 갖는 3번 룸(room) 이벤트 건 DELETE 수행
+```
+http DELETE http://rooms:8080/rooms/3 # delete roomId=3
+```
 
-<img width="1440" alt="스크린샷 2021-05-21 오후 4 56 58" src="https://user-images.githubusercontent.com/43338817/119103981-b6195780-ba56-11eb-8eae-81bb47dc1b09.png">
+결제(pay) 및 예약(book) 이벤트 건을 GET 명령어를 통해 조회한 결과 룸(room)에서 삭제한 3번 키를 갖는 결제 및 예약 이벤트 또한 삭제된 것을 확인
 
-결제(pay) 이벤트 건을 GET 명령어를 통해 조회한 결과 예약(book)에서 삭제한 7번 키를 갖는 결제(pay) 이벤트 또한 삭제된 것을 확
+```
+{
+    "_embedded": {
+        "bookings": [
+            {
+                "startDate": "2021-06-04T00:00:00.000+0000",
+                "endDate": "2021-06-05T00:00:00.000+0000",
+                "guestId": 1,
+                "hostId": null,
+                "roomId": 1,
+                "status": "BOOKED",
+                "price": null,
+                "_links": {
+                    "self": {
+                        "href": "http://booking:8080/bookings/1"
+                    },
+                    "booking": {
+                        "href": "http://booking:8080/bookings/1"
+                    }
+                }
+            },
+            {
+                "startDate": "2021-06-04T00:00:00.000+0000",
+                "endDate": "2021-06-05T00:00:00.000+0000",
+                "guestId": 1,
+                "hostId": 1,
+                "roomId": 1,
+                "status": "BOOKED",
+                "price": 1000,
+                "_links": {
+                    "self": {
+                        "href": "http://booking:8080/bookings/2"
+                    },
+                    "booking": {
+                        "href": "http://booking:8080/bookings/2"
+                    }
+                }
+            },
+            {
+                "startDate": "2012-04-23T18:25:43.511+0000",
+                "endDate": "2012-04-27T18:25:43.511+0000",
+                "guestId": 1,
+                "hostId": 1,
+                "roomId": 2,
+                "status": "BOOKED",
+                "price": 1000,
+                "_links": {
+                    "self": {
+                        "href": "http://booking:8080/bookings/4"
+                    },
+                    "booking": {
+                        "href": "http://booking:8080/bookings/4"
+                    }
+                }
+            }
+        ]
+    },
+    "_links": {
+        "self": {
+            "href": "http://booking:8080/bookings{?page,size,sort}",
+            "templated": true
+        },
+        "profile": {
+            "href": "http://booking:8080/profile/bookings"
+        },
+        "search": {
+            "href": "http://booking:8080/bookings/search"
+        }
+    },
+    "page": {
+        "size": 20,
+        "totalElements": 3,
+        "totalPages": 1,
+        "number": 0
+    }
+}
+```
 
-<img width="1440" alt="스크린샷 2021-05-21 오후 4 57 10" src="https://user-images.githubusercontent.com/43338817/119104058-c92c2780-ba56-11eb-83bc-9cc1baff8157.png">
+```
+{
+    "_embedded": {
+        "payments": [
+            {
+                "bookId": 4,
+                "roomId": 2,
+                "price": 1000,
+                "hostId": 1,
+                "guestId": 1,
+                "startDate": "2012-04-23T18:25:43.511+0000",
+                "endDate": "2012-04-27T18:25:43.511+0000",
+                "status": "APPROVED",
+                "_links": {
+                    "self": {
+                        "href": "http://pay:8080/payments/1"
+                    },
+                    "payment": {
+                        "href": "http://pay:8080/payments/1"
+                    }
+                }
+            }
+        ]
+    },
+    "_links": {
+        "self": {
+            "href": "http://pay:8080/payments{?page,size,sort}",
+            "templated": true
+        },
+        "profile": {
+            "href": "http://pay:8080/profile/payments"
+        },
+        "search": {
+            "href": "http://pay:8080/payments/search"
+        }
+    },
+    "page": {
+        "size": 20,
+        "totalElements": 1,
+        "totalPages": 1,
+        "number": 0
+    }
+}
+```
 
 # 운영
 
