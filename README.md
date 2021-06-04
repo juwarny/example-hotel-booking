@@ -501,7 +501,7 @@ http POST http://book:8080/books startDate="2012-04-23T18:25:43.511+0000" endDat
 # 결제서비스 재기동
 $ kubectl apply -f pay.yaml
 ```
-![image](https://user-images.githubusercontent.com/45786659/119074868-c4ea1500-ba2a-11eb-8ae4-7b4c04945b43.png)
+
 ```
 # 예약처리 (siege 사용)
 http POST http://book:8080/books startDate="2012-04-23T18:25:43.511+0000" endDate="2012-04-27T18:25:43.511+0000" guestId=1 hostId=1 roomId=2 price=1000  #Success
@@ -686,7 +686,7 @@ http http://alarm:8080/notifications # 알림이력조회 불가
 
 ```
 # 알림 서비스 기동
-kubectl apply -f alarm.yaml
+kubectl apply -f notification.yaml
 ```
 
 ```
@@ -943,7 +943,84 @@ http DELETE http://rooms:8080/rooms/3 # delete roomId=3
 ## CI/CD 설정
 
 
-각 구현체들은 각자의 source repository 에 구성되었고, 사용한 CI/CD 플랫폼은 GCP를 사용하였으며, pipeline build script 는 각 프로젝트 폴더 이하에 cloudbuild.yml 에 포함되었다.
+각 구현체들은 각자의 source repository 에 구성되었고, 사용한 CI/CD 플랫폼은 github actions를 사용하여 git push -> mvn package -> docker build and push(aws ecr)까지 구현
+
+main.yaml
+```
+# This workflow will build a Java project with Maven
+# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
+name: Java CI with Maven
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up JDK 8
+      uses: actions/setup-java@v2
+      with:
+        java-version: '8'
+        distribution: 'adopt'
+    - name: Build with Maven
+      run: mvn package --file pom.xml
+      
+    - uses: actions/upload-artifact@v1
+      with:
+       name: mypage
+       path: target/
+      
+  deploy:
+    name: Deploy
+    needs: [build]
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    
+    - uses: actions/download-artifact@v1
+      with:
+          name: mypage
+          path: target/
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-northeast-2
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+        ECR_REGISTRY: 879772956301.dkr.ecr.ap-northeast-2.amazonaws.com
+        ECR_REPOSITORY: user04-mypage
+        IMAGE_TAG: latest
+      run: |
+        # Build a docker container and
+        # push it to ECR so that it can
+        # be deployed to ECS.
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+```
+
+![image](https://github.com/juwarny/example-hotel-booking/blob/master/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202021-06-04%20%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB%208.58.24.png)
+![image](https://github.com/juwarny/example-hotel-booking/blob/master/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202021-06-04%20%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB%209.00.21.png)
 
 
 ## 동기식 호출 / 서킷 브레이킹 / 장애격리
@@ -959,7 +1036,14 @@ kubectl label namespace myhotel istio-injection=enabled --overwrite
 - 동시사용자 255명
 - 180초 동안 실시
 ```
-$ siege -v -c255 -t180S -r10 --content-type "application/json" 'http://book:8080/books POST {"bookId":1, "roomId":1, "price":1000, "hostId":10, "guestId":10, "startDate":20200101, "endDate":20200103}'
+$ siege -v -c255 -t180S -r10 --content-type "application/json" 'http://booking:8080/bookings POST {
+    "startDate": "2012-04-23T18:25:43.511+0000",
+    "endDate": "2012-04-27T18:25:43.511+0000",
+    "guestId": 1,
+    "hostId": 1,
+    "roomId": 3,
+    "price": 1500
+}'
 ```
 - 서킷브레이킹을 위한 DestinationRule 적용
 ```
@@ -988,7 +1072,7 @@ spec:
 
 - DestinationRule 적용되어 서킷 브레이킹 동작 확인 (Kiali Graph)
 
-![image](https://user-images.githubusercontent.com/43338817/119082429-0bdf0700-ba39-11eb-8f29-b0f934c9c4b5.png)
+![image](https://github.com/juwarny/example-hotel-booking/blob/master/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202021-06-04%20%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB%209.20.27.png)
 
 - 다시 부하 발생하여 DestinationRule 적용 제거하여 정상 처리 확인
 ```
@@ -1000,62 +1084,121 @@ kubectl delete -f dr-pay.yaml
 앞서 CB 는 시스템을 안정되게 운영할 수 있게 해줬지만 사용자의 요청을 100% 받아들여주지 못했기 때문에 이에 대한 보완책으로 자동화된 확장 기능을 적용하고자 한다. 
 
 
-- 결제서비스에 대한 replica 를 동적으로 늘려주도록 HPA 를 설정한다. 설정은 CPU 사용량이 3프로를 넘어서면 replica 를 10개까지 늘려준다:
+- 예약서비스에 대한 replica 를 동적으로 늘려주도록 HPA 를 설정한다. 설정은 CPU 사용량이 5프로를 넘어서면 replica 를 10개까지 늘려준다:
 ```
-$ kubectl autoscale deploy pay --min=1 --max=10 --cpu-percent=3
+$ kubectl autoscale deploy booking --min=1 --max=10 --cpu-percent=5 -n myhotel
 ```
-- 오토스케일 아웃 테스트를 위하여 book.yaml 파일 spec indent에 메모리 설정에 대한 문구를 추가한다:
+- 오토스케일 아웃 테스트를 위하여 booking.yaml 파일 spec indent에 메모리 설정에 대한 문구를 추가한다:
 
-![image](https://user-images.githubusercontent.com/45786659/119083688-64af9f00-ba3b-11eb-9c58-7966c141afee.png)
+```
+resources:
+  limits:
+    cpu: 500m
+  requests:
+    cpu: 200m
+```
 
 - CB 에서 했던 방식대로 워크로드를 3분 동안 걸어준다.
 ```
-siege -v -c255 -t180S -r10 --content-type "application/json" 'http://book:8080/books POST {"bookId":1, "roomId":1, "price":1000, "hostId":10, "guestId":10, "startDate":20200101, "endDate":20200103}'
+$ siege -v -c255 -t180S -r10 --content-type "application/json" 'http://booking:8080/bookings POST {
+    "startDate": "2012-04-23T18:25:43.511+0000",
+    "endDate": "2012-04-27T18:25:43.511+0000",
+    "guestId": 1,
+    "hostId": 1,
+    "roomId": 3,
+    "price": 1500
+}'
 ```
 - 오토스케일이 어떻게 되고 있는지 모니터링을 걸어둔다:
 ```
-kubectl get deploy book -w -n myhotel
+kubectl get deploy booking -w -n myhotel
 ```
 - 어느정도 시간이 흐른 후 (약 30초) 스케일 아웃이 벌어지는 것을 확인할 수 있다:
 ```
-NAME   READY   UP-TO-DATE   AVAILABLE   AGE
-book   1/1     1            1           66s
-book   1/4     1            1           2m9s
-book   1/4     1            1           2m9s
-book   1/4     1            1           2m9s
-book   1/4     4            1           2m9s
-book   1/8     4            1           2m24s
-book   1/8     4            1           2m24s
-book   1/8     4            1           2m24s
-book   1/8     8            1           2m24s
-book   1/10    8            1           2m40s
-book   1/10    8            1           2m40s
-book   1/10    8            1           2m40s
-book   1/10    10           1           2m40s
-book   2/10    10           2           3m21s
-book   3/10    10           3           3m26s
-book   4/10    10           4           3m35s
-book   5/10    10           5           3m39s
-book   6/10    10           6           3m41s
-book   7/10    10           7           3m42s
-book   8/10    10           8           3m43s
-book   9/10    10           9           3m54s
-book   10/10   10           10          3m55s
-:
+NAME      READY   UP-TO-DATE   AVAILABLE   AGE
+booking   0/1     1            0           38s
+booking   1/1     1            1           79s
+booking   1/1     1            1           6m33s
+booking   0/1     0            0           0s
+booking   0/1     0            0           0s
+booking   0/1     0            0           0s
+booking   0/1     1            0           0s
+booking   1/1     1            1           76s
+booking   0/1     1            0           8m47s
+booking   1/1     1            1           10m
+booking   1/3     1            1           13m
+booking   1/3     1            1           13m
+booking   1/3     1            1           13m
+booking   1/3     3            1           13m
+booking   1/3     3            1           14m
+booking   0/1     0            0           0s
+booking   0/1     0            0           0s
+booking   0/1     0            0           0s
+booking   0/1     1            0           0s
+booking   1/1     1            1           80s
+booking   1/2     1            1           2m12s
+booking   1/2     1            1           2m12s
+booking   1/2     1            1           2m12s
+booking   1/2     2            1           2m12s
+booking   1/4     2            1           3m14s
+booking   1/4     2            1           3m14s
+booking   1/4     2            1           3m14s
+booking   1/4     4            1           3m14s
+booking   1/8     4            1           3m30s
+booking   1/8     4            1           3m30s
+booking   1/8     4            1           3m30s
+booking   1/8     8            1           3m30s
+booking   2/8     8            2           3m30s
+booking   1/8     8            1           3m40s
+booking   1/10    8            1           4m16s
+booking   1/10    8            1           4m16s
+booking   1/10    8            1           4m16s
+booking   1/10    10           1           4m16s
+booking   2/10    10           2           4m37s
+booking   3/10    10           3           4m40s
+booking   4/10    10           4           4m53s
+booking   5/10    10           5           4m54s
+booking   6/10    10           6           4m55s
+booking   7/10    10           7           5m3s
+booking   8/10    10           8           5m6s
+booking   9/10    10           9           5m43s
+booking   10/10   10           10          5m46s
 ```
 - siege 의 로그를 보아도 전체적인 성공률이 높아진 것을 확인 할 수 있다. 
 ```
-Transactions:                   9090 hits
-Availability:                  99.98 %
-Elapsed time:                 143.38 secs
-Data transferred:               3.06 MB
-Response time:                  3.88 secs
-Transaction rate:              63.40 trans/sec
-Throughput:                     0.02 MB/sec
-Concurrency:                  245.75
-Successful transactions:        9090
-Failed transactions:               2
-Longest transaction:           34.12
+HTTP/1.1 201     0.06 secs:     354 bytes ==> POST http://booking:8080/bookings
+HTTP/1.1 201     2.16 secs:     352 bytes ==> POST http://booking:8080/bookings
+HTTP/1.1 201     0.07 secs:     354 bytes ==> POST http://booking:8080/bookings
+HTTP/1.1 201     5.00 secs:     352 bytes ==> POST http://booking:8080/bookings
+HTTP/1.1 201     2.37 secs:     352 bytes ==> POST http://booking:8080/bookings
+HTTP/1.1 201     0.18 secs:     354 bytes ==> POST http://booking:8080/bookings
+HTTP/1.1 201     0.18 secs:     354 bytes ==> POST http://booking:8080/bookings
+HTTP/1.1 201     0.18 secs:     354 bytes ==> POST http://booking:8080/bookings
+HTTP/1.1 201     0.10 secs:     354 bytes ==> POST http://booking:8080/bookings
+HTTP/1.1 201     2.62 secs:     352 bytes ==> POST http://booking:8080/bookings
+HTTP/1.1 201     0.08 secs:     354 bytes ==> POST http://booking:8080/bookings
+HTTP/1.1 201     4.89 secs:     352 bytes ==> POST http://booking:8080/bookings
+HTTP/1.1 201     4.68 secs:     352 bytes ==> POST http://booking:8080/bookings
+HTTP/1.1 201     9.93 secs:     352 bytes ==> POST http://booking:8080/bookings
+HTTP/1.1 201     0.28 secs:     354 bytes ==> POST http://booking:8080/bookings
+HTTP/1.1 201     0.10 secs:     354 bytes ==> POST http://booking:8080/bookings
+HTTP/1.1 201     2.26 secs:     352 bytes ==> POST http://booking:8080/bookings
+HTTP/1.1 201     0.11 secs:     354 bytes ==> POST http://booking:8080/bookings
+HTTP/1.1 201     2.41 secs:     352 bytes ==> POST http://booking:8080/bookings
+HTTP/1.1 201     2.34 secs:     352 bytes ==> POST http://booking:8080/bookings
+
+Lifting the server siege...
+Transactions:                  18531 hits
+Availability:                  99.93 %
+Elapsed time:                 179.94 secs
+Data transferred:               6.25 MB
+Response time:                  2.44 secs
+Transaction rate:             102.98 trans/sec
+Throughput:                     0.03 MB/sec
+Concurrency:                  251.71
+Successful transactions:       18531
+Failed transactions:              13
+Longest transaction:           35.25
 Shortest transaction:           0.01
 ```
 
@@ -1132,60 +1275,54 @@ metadata:
   namespace: myhotel
 data:
   api.url.payment: http://pay:8080
-  alarm.prefix: Hello
+  notification.prefix: Hello
 ```
-* book.yaml (configmap 사용)
+* booking.yaml (configmap 사용)
 ```
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: book
-  namespace: myhotel
-  labels:
-    app: book
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: book
-  template:
-    metadata:
-      labels:
-        app: book
-    spec:
+...
       containers:
-        - name: book
-          image: 740569282574.dkr.ecr.ap-northeast-1.amazonaws.com/book:latest
+        - name: booking
+          image: 879772956301.dkr.ecr.ap-northeast-2.amazonaws.com/user04-booking:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
+          resources:
+            limits:
+              cpu: 500m
+            requests:
+              cpu: 200m
           env:
             - name: api.url.payment
               valueFrom:
                 configMapKeyRef:
                   name: myhotel-config
                   key: api.url.payment
-          ...
+...
+
 ```
-* kubectl describe pod/book-77998c895-ffbnn -n myhotel
+* kubectl describe pod/booking-7dc6fbb847-8vwtm -n myhotel
 ```
 Containers:
-  book:
-    Container ID:   docker://22dff5a6bd54a48951dc328db052ca494295dae7a431384b920714a5d6814b43
-    Image:          740569282574.dkr.ecr.ap-northeast-1.amazonaws.com/book:latest
-    Image ID:       docker-pullable://740569282574.dkr.ecr.ap-northeast-1.amazonaws.com/book@sha256:4918ad3d2dc44648151861f0d94457a02c963823df863a702f9bb05c7ac02261
+  booking:
+    Container ID:   docker://541140d9489d0addf1bbe13a0a0c47b978a38cb7660439c548647d1a03f9b2c8
+    Image:          879772956301.dkr.ecr.ap-northeast-2.amazonaws.com/user04-booking:latest
+    Image ID:       docker-pullable://879772956301.dkr.ecr.ap-northeast-2.amazonaws.com/user04-booking@sha256:120ff700c1289470af764a6029e852bcc83d3c8a2177900eec8b4a5551ee756d
     Port:           8080/TCP
     Host Port:      0/TCP
     State:          Running
-      Started:      Fri, 21 May 2021 02:21:12 +0000
+      Started:      Fri, 04 Jun 2021 10:53:24 +0900
     Ready:          True
     Restart Count:  0
-    Liveness:       http-get http://:8080/actuator/health delay=120s timeout=2s period=5s #success=1 #failure=5
-    Readiness:      http-get http://:8080/actuator/health delay=10s timeout=2s period=5s #success=1 #failure=10
+    Limits:
+      cpu:  500m
+    Requests:
+      cpu:      200m
+    Liveness:   http-get http://:15020/app-health/booking/livez delay=120s timeout=2s period=5s #success=1 #failure=5
+    Readiness:  http-get http://:15020/app-health/booking/readyz delay=10s timeout=2s period=5s #success=1 #failure=10
     Environment:
       api.url.payment:  <set to the key 'api.url.payment' of config map 'myhotel-config'>  Optional: false
     Mounts:
-      /var/run/secrets/kubernetes.io/serviceaccount from default-token-m9sfp (ro)
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-nlq2l (ro)
 ```
 
 ## Self-healing (Liveness Probe)
