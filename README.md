@@ -1359,7 +1359,7 @@ siege -v -c255 -t180S -r10 --content-type "application/json" 'http://booking:808
 }'
 ```
 ```
-(base) juwonkim@JUWONui-MacBookAir yaml % kubectl get deploy booking -n mybnb -w
+(base) juwonkim@JUWONui-MacBookAir yaml % kubectl get deploy booking -n myhotel -w
 NAME      READY   UP-TO-DATE   AVAILABLE   AGE
 booking   0/1     1            0           13s
 booking   1/1     1            1           79s
@@ -1373,3 +1373,287 @@ booking   1/1     1            1           4m9s
 ## CQRS
 
 - 게스트와 호스트가 자주 예약관리에서 확인할 수 있는 상태를 마이페이지(프론트엔드)에서 확인할 수 있어야 한다:
+
+이벤트 생성 시 mypage에서 메시지를 통해 받는 소스코드
+
+```
+package myhotel;
+
+import myhotel.config.kafka.KafkaProcessor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class MyPageViewHandler {
+
+
+    @Autowired
+    private MyPageRepository myPageRepository;
+
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whenBooked_then_CREATE_1 (@Payload Booked booked) {
+        try {
+
+            if (!booked.validate()) return;
+
+            MyPage myPage = MyPage.builder()
+                    .bookId(booked.getId())
+                    .startDate(booked.getStartDate())
+                    .endDate(booked.getEndDate())
+                    .guestId(booked.getGuestId())
+                    .hostId(booked.getHostId())
+                    .price(booked.getPrice())
+                    .bookStatus(booked.getStatus())
+                    .roomId(booked.getRoomId())
+                    .build();
+            myPageRepository.save(myPage);
+        
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whenBookCanceled_then_CREATE_2 (@Payload BookCanceled bookCanceled) {
+        try {
+
+            if (!bookCanceled.validate()) return;
+
+            MyPage myPage = MyPage.builder()
+                    .bookId(bookCanceled.getId())
+                    .startDate(bookCanceled.getStartDate())
+                    .endDate(bookCanceled.getEndDate())
+                    .guestId(bookCanceled.getGuestId())
+                    .hostId(bookCanceled.getHostId())
+                    .price(bookCanceled.getPrice())
+                    .bookStatus(bookCanceled.getStatus())
+                    .roomId(bookCanceled.getRoomId())
+                    .build();
+            myPageRepository.save(myPage);
+        
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whenPaymentApproved_then_CREATE_3 (@Payload PaymentApproved paymentApproved) {
+        try {
+
+            if (!paymentApproved.validate()) return;
+
+            MyPage myPage = MyPage.builder()
+                    .bookId(paymentApproved.getId())
+                    .startDate(paymentApproved.getStartDate())
+                    .endDate(paymentApproved.getEndDate())
+                    .guestId(paymentApproved.getGuestId())
+                    .hostId(paymentApproved.getHostId())
+                    .price(paymentApproved.getPrice())
+                    .payStatus(paymentApproved.getStatus())
+                    .roomId(paymentApproved.getRoomId())
+                    .build();
+            myPageRepository.save(myPage);
+        
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whenPaymentCanceled_then_CREATE_4 (@Payload PaymentCanceled paymentCanceled) {
+        try {
+
+            if (!paymentCanceled.validate()) return;
+
+            MyPage myPage = MyPage.builder()
+                    .bookId(paymentCanceled.getId())
+                    .startDate(paymentCanceled.getStartDate())
+                    .endDate(paymentCanceled.getEndDate())
+                    .guestId(paymentCanceled.getGuestId())
+                    .hostId(paymentCanceled.getHostId())
+                    .price(paymentCanceled.getPrice())
+                    .payStatus(paymentCanceled.getStatus())
+                    .roomId(paymentCanceled.getRoomId())
+                    .build();
+            myPageRepository.save(myPage);
+        
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whenDeletedRoom_then_CREATE_5 (@Payload DeletedRoom deletedRoom) {
+        try {
+
+            if (!deletedRoom.validate()) return;
+
+            MyPage myPage = MyPage.builder()
+                    .hostId(deletedRoom.getHostId())
+                    .price(deletedRoom.getPrice())
+                    .roomId(deletedRoom.getId())
+                    .build();
+            myPageRepository.save(myPage);
+        
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whenRegisteredRoom_then_CREATE_6 (@Payload RegisteredRoom registeredRoom) {
+        try {
+
+            if (!registeredRoom.validate()) return;
+            MyPage myPage = MyPage.builder()
+                    .hostId(registeredRoom.getHostId())
+                    .price(registeredRoom.getPrice())
+                    .roomId(registeredRoom.getId())
+                    .build();
+            myPageRepository.save(myPage);
+        
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+}
+```
+mypage를 GET을 하여 이벤트 발생시 저장된 데이터를 출력
+```
+{
+    "_embedded": {
+        "myPages": [
+            {
+                "bookId": null,
+                "hostId": 1,
+                "price": 1000,
+                "startDate": null,
+                "endDate": null,
+                "roomId": 1,
+                "bookStatus": null,
+                "payStatus": null,
+                "payId": null,
+                "guestId": null,
+                "_links": {
+                    "self": {
+                        "href": "http://mypage:8080/myPages/1"
+                    },
+                    "myPage": {
+                        "href": "http://mypage:8080/myPages/1"
+                    }
+                }
+            },
+            {
+                "bookId": null,
+                "hostId": 1,
+                "price": 2000,
+                "startDate": null,
+                "endDate": null,
+                "roomId": 2,
+                "bookStatus": null,
+                "payStatus": null,
+                "payId": null,
+                "guestId": null,
+                "_links": {
+                    "self": {
+                        "href": "http://mypage:8080/myPages/2"
+                    },
+                    "myPage": {
+                        "href": "http://mypage:8080/myPages/2"
+                    }
+                }
+            },
+            {
+                "bookId": null,
+                "hostId": 1,
+                "price": 1000,
+                "startDate": null,
+                "endDate": null,
+                "roomId": 3,
+                "bookStatus": null,
+                "payStatus": null,
+                "payId": null,
+                "guestId": null,
+                "_links": {
+                    "self": {
+                        "href": "http://mypage:8080/myPages/3"
+                    },
+                    "myPage": {
+                        "href": "http://mypage:8080/myPages/3"
+                    }
+                }
+            },
+            {
+                "bookId": null,
+                "hostId": 1,
+                "price": 1000,
+                "startDate": null,
+                "endDate": null,
+                "roomId": 3,
+                "bookStatus": null,
+                "payStatus": null,
+                "payId": null,
+                "guestId": null,
+                "_links": {
+                    "self": {
+                        "href": "http://mypage:8080/myPages/4"
+                    },
+                    "myPage": {
+                        "href": "http://mypage:8080/myPages/4"
+                    }
+                }
+            },
+            {
+                "bookId": 5,
+                "hostId": 1,
+                "price": 1500,
+                "startDate": "2012-04-23T18:25:43.511+0000",
+                "endDate": "2012-04-27T18:25:43.511+0000",
+                "roomId": 3,
+                "bookStatus": "CANCELED",
+                "payStatus": null,
+                "payId": null,
+                "guestId": 1,
+                "_links": {
+                    "self": {
+                        "href": "http://mypage:8080/myPages/5"
+                    },
+                    "myPage": {
+                        "href": "http://mypage:8080/myPages/5"
+                    }
+                }
+            },
+            {
+                "bookId": 6,
+                "hostId": 1,
+                "price": 1500,
+                "startDate": "2012-04-23T18:25:43.511+0000",
+                "endDate": "2012-04-27T18:25:43.511+0000",
+                "roomId": 3,
+                "bookStatus": "CANCELED",
+                "payStatus": null,
+                "payId": null,
+                "guestId": 1,
+                "_links": {
+                    "self": {
+                        "href": "http://mypage:8080/myPages/6"
+                    },
+                    "myPage": {
+                        "href": "http://mypage:8080/myPages/6"
+                    }
+                }
+            }
+        ]
+    },
+    "_links": {
+        "self": {
+            "href": "http://mypage:8080/myPages"
+        },
+        "profile": {
+            "href": "http://mypage:8080/profile/myPages"
+        }
+    }
+}
+```
