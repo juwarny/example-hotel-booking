@@ -1343,155 +1343,33 @@ deployment.yml 에 Liveness Probe 옵션 설정
             failureThreshold: 5
 ```
 
-book pod에 liveness가 적용된 부분 확인
-
-```
-kubectl describe pod/book-77998c895-ffbnn -n myhotel
-```
-![image](https://user-images.githubusercontent.com/45786659/119081667-6b3c1780-ba37-11eb-881c-197b181a4e43.png)
-
-
-book 서비스의 liveness가 발동되어 2회 retry 시도 한 부분 확인
-```
-kubectl get -n myhotel all
-```
-![image](https://user-images.githubusercontent.com/45786659/119081060-311e4600-ba36-11eb-8112-7fd52411f941.png)
-
 retry 시도 상황 재현을 위하여 부하테스터 siege를 활용하여 book 과부하
+
 ```
-$ siege -v -c255 -t180S -r10 --content-type "application/json" 'http://book:8080/books POST {"bookId":1, "roomId":1, "price":1000, "hostId":10, "guestId":10, "startDate":20200101, "endDate":20200103}'
-
-# Service Unavailable(503) 오류 
-HTTP/1.1 500    31.60 secs:     820 bytes ==> POST http://book:8080/books
-HTTP/1.1 500    31.48 secs:     820 bytes ==> POST http://book:8080/books
-HTTP/1.1 500    31.40 secs:     820 bytes ==> POST http://book:8080/books
-HTTP/1.1 500    31.70 secs:     820 bytes ==> POST http://book:8080/books
-HTTP/1.1 500    31.61 secs:     820 bytes ==> POST http://book:8080/books
-HTTP/1.1 500    31.71 secs:     820 bytes ==> POST http://book:8080/books
-HTTP/1.1 500    31.59 secs:     820 bytes ==> POST http://book:8080/books
-HTTP/1.1 500    31.52 secs:     820 bytes ==> POST http://book:8080/books
-HTTP/1.1 500    31.60 secs:     820 bytes ==> POST http://book:8080/books
-HTTP/1.1 500    31.60 secs:     820 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    31.75 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    28.85 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    31.06 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.26 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.56 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.25 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.17 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    31.17 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.57 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.26 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.25 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.07 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    31.17 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    28.17 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    31.67 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    28.97 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    31.37 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.55 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.26 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.16 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.66 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.73 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    28.86 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    31.46 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.86 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.25 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.06 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    28.57 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.97 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    31.36 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.75 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.25 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.05 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.67 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.96 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.67 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.38 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.18 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.48 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.27 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.58 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.87 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.68 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.68 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.27 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    31.38 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.17 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    31.17 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.26 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.17 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.68 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.58 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.68 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    31.18 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    28.66 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.38 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    31.77 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    32.08 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.58 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.87 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    31.18 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.38 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    31.38 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.87 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.48 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.87 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    31.08 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.38 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    28.66 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.98 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    28.77 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.87 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.08 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    31.46 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    31.08 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.87 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    28.77 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    28.77 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.48 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.07 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.38 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    31.39 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    28.58 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.89 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.29 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.49 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    31.69 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.09 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    31.29 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    28.86 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.88 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.49 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    30.58 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    28.67 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.09 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.08 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    31.19 secs:      19 bytes ==> POST http://book:8080/books
-HTTP/1.1 503    29.09 secs:      19 bytes ==> POST http://book:8080/books
-
-# book deploy 모니터링 결과 (Service Unavailable 확인)
-NAME   READY   UP-TO-DATE   AVAILABLE   AGE
-book   1/1     1            1           116s
-book   0/1     1            0           7m48s
-
-# book deploy 모니터링 결과 (Liveness 발동되어 Retry)
-$ kubectl get deploy book -w -n myhotel
-
-NAME   READY   UP-TO-DATE   AVAILABLE   AGE
-book   1/1     1            1           116s
-book   0/1     1            0           7m48s
-book   1/1     1            1           8m57s
-
-# book pod 조회 결과 (Liveness 발동되어 Retry)
-$ kubectl get pod/book-6f6db947f7-kqggb -n myhotel -o wide
-NAME                    READY   STATUS    RESTARTS   AGE   IP             NODE                                               NOMINATED NODE   READINESS GATES
-book-6f6db947f7-kqggb   2/2     Running   1          18m   192.168.0.47   ip-192-168-2-193.ap-northeast-1.compute.internal   <none>           <none>
+siege -v -c100 -t300S --delay 2S -r10 --content-type "application/json" 'http://booking:8080/actuator/health'
 ```
+```
+siege -v -c255 -t180S -r10 --content-type "application/json" 'http://booking:8080/bookings POST {
+    "startDate": "2012-04-23T18:25:43.511+0000",
+    "endDate": "2012-04-27T18:25:43.511+0000",
+    "guestId": 1,
+    "hostId": 1,
+    "roomId": 3,
+    "price": 1500
+}'
+```
+```
+(base) juwonkim@JUWONui-MacBookAir yaml % kubectl get deploy booking -n mybnb -w
+NAME      READY   UP-TO-DATE   AVAILABLE   AGE
+booking   0/1     1            0           13s
+booking   1/1     1            1           79s
+booking   0/1     1            0           2m34s
+booking   1/1     1            1           4m9s
+```
+![image](https://github.com/juwarny/example-hotel-booking/blob/master/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202021-06-04%20%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB%2011.25.52.png)
+
+![image](https://github.com/juwarny/example-hotel-booking/blob/master/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA%202021-06-04%20%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB%2011.26.59.png)
 
 ## CQRS
 
 - 게스트와 호스트가 자주 예약관리에서 확인할 수 있는 상태를 마이페이지(프론트엔드)에서 확인할 수 있어야 한다:
-
-<img width="1440" alt="cqrs" src="https://user-images.githubusercontent.com/45786659/119085956-a9d5d000-ba3f-11eb-80a6-7c3210c02823.png">
