@@ -373,11 +373,123 @@ http http://book:8080/books/1
 
 
 ## 폴리글랏 퍼시스턴스
+booking에 mysql를 연결 나머지 앱들은 h2를 사용
 
+mysql-deployment.yaml
 
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-svc
+  labels:
+    app: booking
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: booking
+    tier: mysql
+  clusterIP: None
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim
+  labels:
+    app: booking
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: booking-mysql
+  labels:
+    app: booking
+spec:
+  selector:
+    matchLabels:
+      app: booking
+      tier: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: booking
+        tier: mysql
+    spec:
+      containers:
+      - image: mysql:5.6
+        name: mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: root-password
+        - name: MYSQL_DATABASE
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: database-name
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: user-username
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: user-password
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: mysql-pv-claim
+```
 
-## 폴리글랏 프로그래밍
+secrets.yaml(base64)
+```
+apiVersion: v1
+kind: Secret
+data:
+  root-password: 여기선 생략
+  database-name: 여기선 생략
+  user-username: 여기선 생략
+  user-password: 여기선 생략
+metadata:
+  name: mysql-secret
+```
+application.yaml(booking)
 
+```
+datasource:
+    url: jdbc:mysql://mysql-svc:3306/${DB_NAME}?useSSL=false
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+    hibernate:
+      ddl-auto: update
+    databasePlatform: "org.hibernate.dialect.MySQL5InnoDBDialect"
+```
+
+![image](https://user-images.githubusercontent.com/18213483/120744127-50889900-c535-11eb-8ae3-79bec1a77e6f.png)
 
 
 ## 동기식 호출 과 Fallback 처리
