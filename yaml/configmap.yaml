@@ -5,4 +5,4 @@ metadata:
   namespace: myhotel
 data:
   api.url.payment: http://pay:8080
-  alarm.prefix: Hello
+  notification.prefix: Hello

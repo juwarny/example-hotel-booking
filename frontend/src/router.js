@@ -10,15 +10,14 @@ import PaymentManager from "./components/PaymentManager"
 import RoomManager from "./components/RoomManager"
 
 
-import GuestManagementPage from "./components/GuestManagementPage"
-import BookManager from "./components/BookManager"
+import MyPage from "./components/MyPage"
+import BookingManager from "./components/BookingManager"
 
 import NotificationManager from "./components/NotificationManager"
 
 export default new Router({
     // mode: 'history',
     base: process.env.BASE_URL,
-    // base: "http://ac9d3799901094257960c3613da58e56-1202669080.ap-northeast-1.elb.amazonaws.com:8080",
     routes: [
             {
                 path: '/Payment',
@@ -34,14 +33,14 @@ export default new Router({
 
 
             {
-                path: '/GuestManagementPage',
-                name: 'GuestManagementPage',
-                component: GuestManagementPage
+                path: '/MyPage',
+                name: 'MyPage',
+                component: MyPage
             },
             {
-                path: '/Book',
-                name: 'BookManager',
-                component: BookManager
+                path: '/Booking',
+                name: 'BookingManager',
+                component: BookingManager
             },
 
             {

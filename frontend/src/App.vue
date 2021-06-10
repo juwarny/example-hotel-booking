@@ -4,7 +4,7 @@
             <v-app-bar app clipped-left flat>
                 <v-toolbar-title>
                     <span class="second-word font uppercase"
-                        >intensiveteam</span
+                        >myhotel</span
                     >
                 </v-toolbar-title>
                 <v-spacer></v-spacer>
