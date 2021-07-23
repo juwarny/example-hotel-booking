@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-svc
+  labels:
+    app: mysql-deployment
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: mysql-deployment
+    tier: mysql
+  clusterIP: None
