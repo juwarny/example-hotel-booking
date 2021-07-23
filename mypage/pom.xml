@@ -8,7 +8,7 @@
 		<version>2.1.9.RELEASE</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>intensiveteam</groupId>
+	<groupId>myhotel</groupId>
 	<artifactId>mypage</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>mypage</name>
@@ -40,7 +40,11 @@
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-openfeign</artifactId>
 		</dependency>
-
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<scope>provided</scope>
+		</dependency>
 
 		<!-- kafka streams -->
 		<dependency>

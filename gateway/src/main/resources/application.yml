@@ -19,12 +19,12 @@ spring:
         - id: mypage
           uri: http://localhost:8083
           predicates:
-            - Path= /guestManagementPages/**
-        - id: book
+            - Path= /myPages/**
+        - id: booking
           uri: http://localhost:8084
           predicates:
-            - Path=/books/** 
-        - id: alarm
+            - Path=/bookings/** 
+        - id: notification
           uri: http://localhost:8085
           predicates:
             - Path=/notifications/** 
@@ -58,13 +58,13 @@ spring:
         - id: mypage
           uri: http://mypage:8080
           predicates:
-            - Path= /guestManagementPages/**
-        - id: book
-          uri: http://book:8080
+            - Path= /myPages/**
+        - id: booking
+          uri: http://booking:8080
           predicates:
-            - Path=/books/** 
-        - id: alarm
-          uri: http://alarm:8080
+            - Path=/bookings/** 
+        - id: notification
+          uri: http://notification:8080
           predicates:
             - Path=/notifications/** 
       globalcors:
